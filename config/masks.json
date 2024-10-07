@@ -1,0 +1,14 @@
+[
+  {
+    "name": "tomfoolery",
+    "file": "assets/tomfoolery_base.png"
+  },
+  {
+    "name": "bee",
+    "file": "assets/beepattern.png"
+  },
+  {
+    "name": "welldone",
+    "file": "assets/fullwelldone.png"
+  }
+]
