@@ -1,11 +1,14 @@
 package org.whatever
 
 import dev.kord.common.entity.PresenceStatus
+import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.behavior.reply
+import dev.kord.core.cache.data.EmojiData
+import dev.kord.core.entity.GuildEmoji
 import dev.kord.core.entity.interaction.InteractionCommand
 import dev.kord.core.event.interaction.ChatInputCommandInteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
@@ -40,7 +43,11 @@ val kord = generateKord()
 val activityConfiguration = readActivityConfig()
 val emotes = readEmotes()
 val welldones = emotes["welldone"]?.jsonArray ?: {
-    logger.error("Welldone emote configs not defines")
+    logger.error("Welldone emote configs not defined")
+    exitProcess(1)
+} as JsonArray
+val listenEmotes = emotes["listen_emotes"]?.jsonArray ?: {
+    logger.error("Listen emote configs not defined")
     exitProcess(1)
 } as JsonArray
 
@@ -164,6 +171,36 @@ suspend fun main() {
         if (message.content.startsWith("<@${kord.selfId.value}>")) {
             message.reply {
                 content = welldones.random().jsonPrimitive.content
+            }
+            logger.info("Welldone")
+            return@on
+        }
+        for (item in listenEmotes) {
+            val emote = item.jsonObject["emote"]!!;
+            val response = item.jsonObject["response"]!!
+            if (message.content.startsWith(emote.jsonPrimitive.content)) {
+                val emoteId = Snowflake(
+                    response.jsonObject["id"]!!
+                        .jsonPrimitive.content.toULong()
+                )
+                val emoteName = response.jsonObject["name"]!!
+                    .jsonPrimitive.content
+                val guildId = Snowflake(
+                    response.jsonObject["guild"]!!
+                        .jsonPrimitive.content.toULong()
+                )
+                message.addReaction(
+                    GuildEmoji(
+                        EmojiData(
+                            id = emoteId,
+                            name = emoteName,
+                            guildId = guildId
+                        ),
+                        kord
+                    )
+                )
+                logger.info("Welldone")
+                return@on
             }
         }
     }

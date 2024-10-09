@@ -2,5 +2,23 @@
   "welldone": [
     "<:welldoneevil:1293512091822592000>",
     "<:welldoneneuro:1293512107790434364>"
+  ],
+  "listen_emotes": [
+    {
+      "emote": "<:welldoneneuro:1289489292921667676>",
+      "response": {
+        "id": "1293512107790434364",
+        "name": "welldoneneuro",
+        "guild": "1168220243299151912"
+      }
+    },
+    {
+      "emote": "<:welldoneevil:1289489301884768291>",
+      "response": {
+        "id": "1293512091822592000",
+        "name": "welldoneevil",
+        "guild": "1168220243299151912"
+      }
+    }
   ]
 }
