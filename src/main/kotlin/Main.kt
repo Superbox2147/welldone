@@ -5,9 +5,13 @@ import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.interaction.response.respond
+import dev.kord.core.behavior.reply
 import dev.kord.core.entity.interaction.InteractionCommand
 import dev.kord.core.event.interaction.ChatInputCommandInteractionCreateEvent
+import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.on
+import dev.kord.gateway.Intent
+import dev.kord.gateway.PrivilegedIntent
 import dev.kord.rest.builder.interaction.attachment
 import dev.kord.rest.builder.interaction.string
 import dev.kord.rest.builder.message.embed
@@ -16,16 +20,15 @@ import io.ktor.client.request.forms.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.*
 import org.whatever.classExtensions.toPng
 import org.whatever.exceptions.TokenNotSetException
 import org.whatever.images.TemplateMask
-import org.whatever.io.readActivityConfig
-import org.whatever.io.readImageFile
-import org.whatever.io.readImageUrl
-import org.whatever.io.readMasks
+import org.whatever.io.*
 import org.whatever.logger.Logger
 import java.io.File
 import java.net.URI
+import kotlin.system.exitProcess
 
 val logger = Logger(
     File("./internal logs"),
@@ -35,7 +38,13 @@ val defaultMasks = readMasks()
 val dotenv = dotenv()
 val kord = generateKord()
 val activityConfiguration = readActivityConfig()
+val emotes = readEmotes()
+val welldones = emotes["welldone"]?.jsonArray ?: {
+    logger.error("Welldone emote configs not defines")
+    exitProcess(1)
+} as JsonArray
 
+@OptIn(PrivilegedIntent::class)
 suspend fun main() {
     logger.info("start main")
     kord.createGlobalChatInputCommand(
@@ -151,8 +160,17 @@ suspend fun main() {
         }
     }
 
+    kord.on<MessageCreateEvent> {
+        if (message.content.startsWith("<@${kord.selfId.value}>")) {
+            message.reply {
+                content = welldones.random().jsonPrimitive.content
+            }
+        }
+    }
+
     logger.info("Logging in as ${kord.getSelf().username}")
     kord.login {
+        intents += Intent.MessageContent
         presence {
             status = PresenceStatus.Online
         }

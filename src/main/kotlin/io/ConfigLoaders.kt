@@ -50,3 +50,11 @@ fun readActivityConfig(): Map<String, Snowflake> {
         exitProcess(1)
     }
 }
+fun readEmotes(): JsonObject {
+    val emoteConfigFile = File("./config/emotes.json")
+    if (!emoteConfigFile.exists()) {
+        logger.error("Emote config not set")
+        exitProcess(1)
+    }
+    return Json.decodeFromString<JsonObject>(emoteConfigFile.readText())
+}
