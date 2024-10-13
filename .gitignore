@@ -44,3 +44,4 @@ bin/
 /config/activity-channels.json
 /internal logs/
 /.idea/artifacts/
+/.idea/ktlint-plugin.xml

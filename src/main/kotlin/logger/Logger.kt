@@ -7,7 +7,10 @@ import kotlinx.datetime.Clock
 import java.io.BufferedWriter
 import java.io.File
 
-class Logger(logDirectory: File, logFilePath: String) {
+class Logger(
+    logDirectory: File,
+    logFilePath: String,
+) {
     private val logWriter: BufferedWriter
     private val logFile = File("${logDirectory.path}/$logFilePath")
 
@@ -54,7 +57,7 @@ class Logger(logDirectory: File, logFilePath: String) {
     private fun enableConsoleColors() {
         if (System.getProperty("os.name").lowercase().startsWith("windows")) {
             info("Enabling color escape codes for console")
-            val stdHandleFunction = getFunction("kernel32","GetStdHandle")
+            val stdHandleFunction = getFunction("kernel32", "GetStdHandle")
             val stdOutputHandle = WinDef.DWORD(-11)
             val handleOut = stdHandleFunction.invoke(WinNT.HANDLE::class.java, arrayOf(stdOutputHandle)) as WinNT.HANDLE
 

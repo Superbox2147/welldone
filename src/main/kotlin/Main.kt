@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 package org.whatever
 
 import dev.kord.common.entity.PresenceStatus
@@ -16,6 +18,7 @@ import dev.kord.core.on
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.rest.builder.interaction.attachment
+import dev.kord.rest.builder.interaction.integer
 import dev.kord.rest.builder.interaction.string
 import dev.kord.rest.builder.message.embed
 import io.github.cdimascio.dotenv.dotenv
@@ -33,55 +36,71 @@ import java.io.File
 import java.net.URI
 import kotlin.system.exitProcess
 
-val logger = Logger(
-    File("./internal logs"),
-    "${Clock.System.now().epochSeconds}"
-)
+val logger =
+    Logger(
+        File("./internal logs"),
+        "${Clock.System.now().epochSeconds}",
+    )
 val defaultMasks = readMasks()
 val dotenv = dotenv()
 val kord = generateKord()
 val activityConfiguration = readActivityConfig()
 val emotes = readEmotes()
-val welldones = emotes["welldone"]?.jsonArray ?: {
-    logger.error("Welldone emote configs not defined")
-    exitProcess(1)
-} as JsonArray
-val listenEmotes = emotes["listen_emotes"]?.jsonArray ?: {
-    logger.error("Listen emote configs not defined")
-    exitProcess(1)
-} as JsonArray
+val welldones =
+    emotes["welldone"]?.jsonArray ?: {
+        logger.error("Welldone emote configs not defined")
+        exitProcess(1)
+    } as JsonArray
+val listenEmotes =
+    emotes["listen_emotes"]?.jsonArray ?: {
+        logger.error("Listen emote configs not defined")
+        exitProcess(1)
+    } as JsonArray
 
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
     logger.info("start main")
     kord.createGlobalChatInputCommand(
         "mask",
-        "Use an image as a mask to shape another"
+        "Use an image as a mask to shape another",
     ) {
-
         attachment(
             "image",
-            "Image to be masked"
+            "Image to be masked",
         ) {
             required = true
         }
 
         string(
             "mask",
-            "Use a built-in mask, overrides custom mask parameter if set"
+            "Use a built-in mask, overrides custom mask parameter if set",
         ) {
             required = false
             for (mask in defaultMasks) {
                 choice(
                     mask.name,
-                    mask.file
+                    mask.file,
                 )
             }
         }
 
         attachment(
             "custom-mask",
-            "Use a custom mask, built-in mask overrides this"
+            "Use a custom mask, built-in mask overrides this",
+        ) {
+            required = false
+        }
+
+        integer(
+            "offset-y",
+            "Offset the template mask vertically",
+        ) {
+            required = false
+        }
+
+        integer(
+            "offset-x",
+            "Offset the template mask horizontally",
         ) {
             required = false
         }
@@ -90,9 +109,11 @@ suspend fun main() {
     kord.on<ChatInputCommandInteractionCreateEvent> {
         val command = interaction.command
         val commandParts = getCommandFullName(command).split(" ")
-        logger.info("Invoke command \"${
-            commandParts.joinToString(" ")
-        }}")
+        logger.info(
+            "Invoke command \"${
+                commandParts.joinToString(" ")
+            }",
+        )
         when (commandParts[0]) {
             "mask" -> {
                 val response = interaction.deferPublicResponse()
@@ -108,54 +129,69 @@ suspend fun main() {
                 }
                 val imageUrl = URI(mainAttachment.url).toURL()
                 val maskFile = command.strings["mask"]
-                val maskUrl = command.attachments["custom-mask"]?.url
-                    ?.let { URI(it) }?.toURL()
-                val mask = try {
-                    if (maskFile != null) {
-                        logger.info("Using mask $maskFile")
-                        TemplateMask(readImageFile(File(maskFile)))
-                    } else {
-                        if (maskUrl != null) {
-                            logger.info("Using custom mask")
-                            TemplateMask(readImageUrl(maskUrl))
+                val maskUrl =
+                    command.attachments["custom-mask"]
+                        ?.url
+                        ?.let { URI(it) }
+                        ?.toURL()
+                val mask =
+                    try {
+                        if (maskFile != null) {
+                            logger.info("Using mask $maskFile")
+                            TemplateMask(readImageFile(File(maskFile)))
                         } else {
-                            logger.warning("No valid mask specified")
-                            throw NullPointerException()
+                            if (maskUrl != null) {
+                                logger.info("Using custom mask")
+                                TemplateMask(readImageUrl(maskUrl))
+                            } else {
+                                logger.warning("No valid mask specified")
+                                throw NullPointerException()
+                            }
                         }
-                    }
-                } catch (e: NullPointerException) {
-                    logger.warning("Attempted to process null image")
-                    response.respond {
-                        embed {
-                            description = "Could not load mask image"
+                    } catch (e: NullPointerException) {
+                        logger.warning("Attempted to process null image")
+                        response.respond {
+                            embed {
+                                description = "Could not load mask image"
+                            }
                         }
+                        return@on
                     }
-                    return@on
-                }
-                val image = try {
-                    readImageUrl(imageUrl)
-                } catch (e: NullPointerException) {
-                    logger.warning("Failed to load image to mask")
-                    response.respond {
-                        embed {
-                            description = "Failed to load template image"
+                val image =
+                    try {
+                        readImageUrl(imageUrl)
+                    } catch (e: NullPointerException) {
+                        logger.warning("Failed to load image to mask")
+                        response.respond {
+                            embed {
+                                description = "Failed to load template image"
+                            }
                         }
+                        return@on
                     }
-                    return@on
-                }
-                val resultImage = mask.mask(image)
+                val offsetX = command.integers["offset-x"] ?: 0
+                val offsetY = command.integers["offset-y"] ?: 0
+                logger.info("Invoke template mask with y-offset = $offsetY and x-offset = $offsetX")
+                val resultImage = mask.mask(image, offsetX.toInt(), offsetY.toInt())
                 val imageByteArray = resultImage.toPng()
                 logger.info("Upload image file")
-                val channel = MessageChannelBehavior(
-                    activityConfiguration["image-spew"]!!,
-                    kord
-                )
-                val embeddableImage = channel.createMessage {
-                    addFile("masked.png",
-                        ChannelProvider(imageByteArray.size.toLong()) {
-                            ByteReadChannel(imageByteArray)
-                        })
-                }.attachments.first().url
+                val channel =
+                    MessageChannelBehavior(
+                        activityConfiguration["image-spew"]!!,
+                        kord,
+                    )
+                val embeddableImage =
+                    channel
+                        .createMessage {
+                            addFile(
+                                "masked.png",
+                                ChannelProvider(imageByteArray.size.toLong()) {
+                                    ByteReadChannel(imageByteArray)
+                                },
+                            )
+                        }.attachments
+                        .first()
+                        .url
                 response.respond {
                     embed {
                         title = "Template mask"
@@ -176,28 +212,33 @@ suspend fun main() {
             return@on
         }
         for (item in listenEmotes) {
-            val emote = item.jsonObject["emote"]!!;
+            val emote = item.jsonObject["emote"]!!
             val response = item.jsonObject["response"]!!
             if (message.content.startsWith(emote.jsonPrimitive.content)) {
-                val emoteId = Snowflake(
-                    response.jsonObject["id"]!!
-                        .jsonPrimitive.content.toULong()
-                )
-                val emoteName = response.jsonObject["name"]!!
-                    .jsonPrimitive.content
-                val guildId = Snowflake(
-                    response.jsonObject["guild"]!!
-                        .jsonPrimitive.content.toULong()
-                )
+                val emoteId =
+                    Snowflake(
+                        response.jsonObject["id"]!!
+                            .jsonPrimitive.content
+                            .toULong(),
+                    )
+                val emoteName =
+                    response.jsonObject["name"]!!
+                        .jsonPrimitive.content
+                val guildId =
+                    Snowflake(
+                        response.jsonObject["guild"]!!
+                            .jsonPrimitive.content
+                            .toULong(),
+                    )
                 message.addReaction(
                     GuildEmoji(
                         EmojiData(
                             id = emoteId,
                             name = emoteName,
-                            guildId = guildId
+                            guildId = guildId,
                         ),
-                        kord
-                    )
+                        kord,
+                    ),
                 )
                 logger.info("Welldone")
                 return@on
@@ -214,21 +255,28 @@ suspend fun main() {
     }
 }
 
-fun generateKord() = runBlocking {
-    logger.info("Getting Kord")
-    val token = dotenv["TOKEN"] ?: ""
-    if (token == "") {
-        logger.error("Token is not set")
-        throw TokenNotSetException()
+fun generateKord() =
+    runBlocking {
+        logger.info("Getting Kord")
+        val token = dotenv["TOKEN"] ?: ""
+        if (token == "") {
+            logger.error("Token is not set")
+            throw TokenNotSetException()
+        }
+        return@runBlocking Kord(token)
     }
-    return@runBlocking Kord(token)
-}
 
 fun getCommandFullName(command: InteractionCommand): String {
-    if (command.data.options.value?.first()?.value?.value != null) {
+    if (command.data.options.value
+            ?.first()
+            ?.value
+            ?.value != null
+    ) {
         return command.rootName
     }
-    if (command.data.options.value?.first() == null) {
+    if (command.data.options.value
+            ?.first() == null
+    ) {
         return command.rootName
     }
     return "${command.rootName} ${command.data.options.value?.first()?.name}"

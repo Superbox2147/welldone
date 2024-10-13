@@ -3,21 +3,24 @@ package org.whatever.io
 import dev.kord.common.entity.Snowflake
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.*
+import org.whatever.logger
 import org.whatever.types.DefaultMask
 import java.io.File
-import org.whatever.logger
 import kotlin.system.exitProcess
 
-fun readMasks(): List<DefaultMask> = buildList {
-    logger.info("Reading masks")
-    val masks = Json
-        .decodeFromString<JsonArray>(
-            File("./config/masks.json")
-            .readText())
-    for (mask in masks) {
-        add(Json.decodeFromJsonElement<DefaultMask>(mask))
+fun readMasks(): List<DefaultMask> =
+    buildList {
+        logger.info("Reading masks")
+        val masks =
+            Json
+                .decodeFromString<JsonArray>(
+                    File("./config/masks.json")
+                        .readText(),
+                )
+        for (mask in masks) {
+            add(Json.decodeFromJsonElement<DefaultMask>(mask))
+        }
     }
-}
 
 fun readActivityConfig(): Map<String, Snowflake> {
     try {
@@ -27,16 +30,18 @@ fun readActivityConfig(): Map<String, Snowflake> {
                 "server",
                 Snowflake(
                     configJson["server"]!!
-                        .jsonPrimitive.content.toULong()
-                )
+                        .jsonPrimitive.content
+                        .toULong(),
+                ),
             )
             put(
                 "image-spew",
                 Snowflake(
                     configJson["channels"]!!
                         .jsonObject["image-spew"]!!
-                        .jsonPrimitive.content.toULong()
-                )
+                        .jsonPrimitive.content
+                        .toULong(),
+                ),
             )
         }
     } catch (e: NullPointerException) {
@@ -50,6 +55,7 @@ fun readActivityConfig(): Map<String, Snowflake> {
         exitProcess(1)
     }
 }
+
 fun readEmotes(): JsonObject {
     val emoteConfigFile = File("./config/emotes.json")
     if (!emoteConfigFile.exists()) {
