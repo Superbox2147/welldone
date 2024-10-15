@@ -6,13 +6,19 @@ import java.awt.image.BufferedImage
 
 class TemplateMask(
     private val mask: BufferedImage,
+    private val padding: Int,
 ) {
     private val transparent = RGBColor(0, 0, 0, 0).toARGBInt()
 
     operator fun get(
         x: Int,
         y: Int,
-    ): Boolean = RGBColor.fromARGBInt(mask.getRGB(x % mask.width, y % mask.height)).alpha != 0
+    ): Boolean =
+        try {
+            RGBColor.fromARGBInt(mask.getRGB(x % mask.width + padding, y % mask.height + padding)).alpha != 0
+        } catch (e: ArrayIndexOutOfBoundsException) {
+            false
+        }
 
     fun mask(
         image: BufferedImage,
@@ -23,7 +29,7 @@ class TemplateMask(
         try {
             for (x in 0..<image.width) {
                 for (y in 0..<image.height) {
-                    if (this[x + xOffset, y + yOffset]) {
+                    if (this[x + xOffset + padding(x, mask.width), y + yOffset + padding(y, image.height)]) {
                         continue
                     }
                     image.setRGB(x, y, transparent)
@@ -34,4 +40,9 @@ class TemplateMask(
         }
         return image
     }
+
+    private fun padding(
+        n: Int,
+        dimension: Int,
+    ): Int = (n / dimension) * padding
 }

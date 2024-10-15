@@ -93,14 +93,21 @@ suspend fun main() {
 
         integer(
             "offset-y",
-            "Offset the template mask vertically",
+            "Offset the template mask vertically (default: 0)",
         ) {
             required = false
         }
 
         integer(
             "offset-x",
-            "Offset the template mask horizontally",
+            "Offset the template mask horizontally (default: 0)",
+        ) {
+            required = false
+        }
+
+        integer(
+            "padding",
+            "Add transparent padding around the template mask (default: 0)",
         ) {
             required = false
         }
@@ -112,7 +119,7 @@ suspend fun main() {
         logger.info(
             "Invoke command \"${
                 commandParts.joinToString(" ")
-            }",
+            }\"",
         )
         when (commandParts[0]) {
             "mask" -> {
@@ -127,6 +134,7 @@ suspend fun main() {
                     }
                     return@on
                 }
+                val padding = command.integers["padding"] ?: 0
                 val imageUrl = URI(mainAttachment.url).toURL()
                 val maskFile = command.strings["mask"]
                 val maskUrl =
@@ -138,11 +146,14 @@ suspend fun main() {
                     try {
                         if (maskFile != null) {
                             logger.info("Using mask $maskFile")
-                            TemplateMask(readImageFile(File(maskFile)))
+                            TemplateMask(readImageFile(File(maskFile)), padding.toInt())
                         } else {
                             if (maskUrl != null) {
                                 logger.info("Using custom mask")
-                                TemplateMask(readImageUrl(maskUrl))
+                                TemplateMask(
+                                    readImageUrl(maskUrl),
+                                    padding.toInt(),
+                                )
                             } else {
                                 logger.warning("No valid mask specified")
                                 throw NullPointerException()
