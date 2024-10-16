@@ -1,9 +1,9 @@
 package org.whatever.images
 
+import com.sksamuel.scrimage.color.HSVColor
 import com.sksamuel.scrimage.color.RGBColor
 import org.whatever.types.Palette
 import java.awt.image.BufferedImage
-import kotlin.math.floor
 
 class PaletteChecker(
     private val palette: Palette,
@@ -13,8 +13,8 @@ class PaletteChecker(
             buildList {
                 for (x in 0..<image.width) {
                     for (y in 0..<image.height) {
-                        val color = RGBColor.fromARGBInt(image.getRGB(x, y))
-                        if (!palette.contains(color)) {
+                        val color = RGBColor.fromARGBInt(image.getRGB(x, y)).toHSV()
+                        if (!palette.contains(color.toRGB())) {
                             add(Pair(x, y))
                             image.setRGB(
                                 x,
@@ -22,15 +22,17 @@ class PaletteChecker(
                                 RGBColor(255, 0, 0, 255).toARGBInt(),
                             )
                         } else {
+                            val newColor =
+                                HSVColor(
+                                    color.hue,
+                                    color.saturation,
+                                    color.value * 0.1F,
+                                    color.alpha,
+                                ).toRGB()
                             image.setRGB(
                                 x,
                                 y,
-                                RGBColor(
-                                    color.red,
-                                    color.green,
-                                    color.blue,
-                                    floor(color.alpha * 0.5).toInt(),
-                                ).toARGBInt(),
+                                newColor.toARGBInt(),
                             )
                         }
                     }
