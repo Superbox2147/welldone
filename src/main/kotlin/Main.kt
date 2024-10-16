@@ -2,11 +2,10 @@
 
 package org.whatever
 
+import dev.kord.common.Color
 import dev.kord.common.entity.PresenceStatus
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
-import dev.kord.core.behavior.channel.MessageChannelBehavior
-import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.behavior.reply
 import dev.kord.core.cache.data.EmojiData
@@ -22,16 +21,15 @@ import dev.kord.rest.builder.interaction.integer
 import dev.kord.rest.builder.interaction.string
 import dev.kord.rest.builder.message.embed
 import io.github.cdimascio.dotenv.dotenv
-import io.ktor.client.request.forms.*
-import io.ktor.utils.io.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.*
-import org.whatever.classExtensions.toPng
 import org.whatever.exceptions.TokenNotSetException
+import org.whatever.images.PaletteChecker
 import org.whatever.images.TemplateMask
 import org.whatever.io.*
 import org.whatever.logger.Logger
+import org.whatever.types.Palette
 import java.io.File
 import java.net.URI
 import kotlin.system.exitProcess
@@ -56,6 +54,8 @@ val listenEmotes =
         logger.error("Listen emote configs not defined")
         exitProcess(1)
     } as JsonArray
+val palette = Palette(File("assets/palette_c82.json"))
+val paletteChecker = PaletteChecker(palette)
 
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
@@ -113,6 +113,18 @@ suspend fun main() {
         }
     }
 
+    kord.createGlobalChatInputCommand(
+        "compare-palette",
+        "Compare the colors of an image to the palette",
+    ) {
+        attachment(
+            "image",
+            "Image to compare to the palette",
+        ) {
+            required = true
+        }
+    }
+
     kord.on<ChatInputCommandInteractionCreateEvent> {
         val command = interaction.command
         val commandParts = getCommandFullName(command).split(" ")
@@ -130,6 +142,7 @@ suspend fun main() {
                     response.respond {
                         embed {
                             description = "Attachment included is not an image"
+                            color = Color(255, 0, 0)
                         }
                     }
                     return@on
@@ -164,6 +177,7 @@ suspend fun main() {
                         response.respond {
                             embed {
                                 description = "Could not load mask image"
+                                color = Color(255, 0, 0)
                             }
                         }
                         return@on
@@ -176,6 +190,7 @@ suspend fun main() {
                         response.respond {
                             embed {
                                 description = "Failed to load template image"
+                                color = Color(255, 0, 0)
                             }
                         }
                         return@on
@@ -184,32 +199,77 @@ suspend fun main() {
                 val offsetY = command.integers["offset-y"] ?: 0
                 logger.info("Invoke template mask with y-offset = $offsetY and x-offset = $offsetX")
                 val resultImage = mask.mask(image, offsetX.toInt(), offsetY.toInt())
-                val imageByteArray = resultImage.toPng()
-                logger.info("Upload image file")
-                val channel =
-                    MessageChannelBehavior(
-                        activityConfiguration["image-spew"]!!,
-                        kord,
-                    )
-                val embeddableImage =
-                    channel
-                        .createMessage {
-                            addFile(
-                                "masked.png",
-                                ChannelProvider(imageByteArray.size.toLong()) {
-                                    ByteReadChannel(imageByteArray)
-                                },
-                            )
-                        }.attachments
-                        .first()
-                        .url
+                val embeddableImage = uploadImage(resultImage)
                 response.respond {
                     embed {
                         title = "Template mask"
                         this.image = embeddableImage
+                        color = Color(0, 127, 255)
                     }
                 }
                 logger.info("Completed template mask")
+            }
+            "compare-palette" -> {
+                val response = interaction.deferPublicResponse()
+                val attachment = command.attachments["image"]!!
+                if (!attachment.isImage) {
+                    logger.info("Image provided was not an image")
+                    response.respond {
+                        embed {
+                            description = "Attachment included is not an image"
+                            color = Color(255, 0, 0)
+                        }
+                    }
+                    return@on
+                }
+                val imageUrl = URI(attachment.url).toURL()
+                val image =
+                    try {
+                        readImageUrl(imageUrl)
+                    } catch (e: NullPointerException) {
+                        logger.warning("Failed to load image")
+                        response.respond {
+                            embed {
+                                description = "Failed to load image"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                val checkResult = paletteChecker.check(image)
+                val embeddableImage = uploadImage(checkResult.second)
+                if (checkResult.first.isEmpty()) {
+                    response.respond {
+                        embed {
+                            title = "Palette check"
+                            description = "Image matches palette"
+                            this.image = embeddableImage
+                            color = Color(0, 127, 255)
+                        }
+                    }
+                    return@on
+                }
+                val wrongPixels = checkResult.first
+                try {
+                    val formattedWrongPixels = paletteChecker.formatIncorrectPixels(wrongPixels)
+                    response.respond {
+                        embed {
+                            title = "Palette check"
+                            description =
+                                if (formattedWrongPixels.length <=
+                                    200
+                                ) {
+                                    formattedWrongPixels
+                                } else {
+                                    "${wrongPixels.size} pixels do not match the palette"
+                                }
+                            this.image = embeddableImage
+                            color = Color(0, 127, 255)
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger.exception(e)
+                }
             }
         }
     }
