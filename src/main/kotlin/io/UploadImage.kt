@@ -10,7 +10,10 @@ import org.whatever.kord
 import org.whatever.logger
 import java.awt.image.BufferedImage
 
-suspend fun uploadImage(image: BufferedImage): String {
+suspend fun uploadImage(
+    image: BufferedImage,
+    name: String,
+): String {
     logger.info("Upload image file")
     val imageByteArray = image.toPng()
     val channel =
@@ -22,7 +25,7 @@ suspend fun uploadImage(image: BufferedImage): String {
     return channel
         .createMessage {
             addFile(
-                "masked.png",
+                "$name.png",
                 ChannelProvider(imageByteArray.size.toLong()) {
                     ByteReadChannel(imageByteArray)
                 },

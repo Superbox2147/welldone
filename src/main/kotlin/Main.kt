@@ -19,14 +19,17 @@ import dev.kord.gateway.PrivilegedIntent
 import dev.kord.rest.builder.interaction.attachment
 import dev.kord.rest.builder.interaction.integer
 import dev.kord.rest.builder.interaction.string
+import dev.kord.rest.builder.message.actionRow
 import dev.kord.rest.builder.message.embed
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.*
+import org.whatever.exceptions.ImageTooBigException
 import org.whatever.exceptions.TokenNotSetException
 import org.whatever.images.PaletteChecker
 import org.whatever.images.TemplateMask
+import org.whatever.images.TemplateStyle
 import org.whatever.io.*
 import org.whatever.logger.Logger
 import org.whatever.types.Palette
@@ -56,6 +59,7 @@ val listenEmotes =
     } as JsonArray
 val palette = Palette(File("assets/palette_c82.json"))
 val paletteChecker = PaletteChecker(palette)
+val templateStyles = readStyles()
 
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
@@ -122,6 +126,31 @@ suspend fun main() {
             "Image to compare to the palette",
         ) {
             required = true
+        }
+    }
+
+    kord.createGlobalChatInputCommand(
+        "style",
+        "Convert a template to a specified source style",
+    ) {
+        attachment(
+            "image",
+            "Image to stylize",
+        ) {
+            required = true
+        }
+
+        string(
+            "style",
+            "Pxls template style to use for the template",
+        ) {
+            required = true
+            for (style in templateStyles) {
+                choice(
+                    style.key,
+                    style.value,
+                )
+            }
         }
     }
 
@@ -199,7 +228,7 @@ suspend fun main() {
                 val offsetY = command.integers["offset-y"] ?: 0
                 logger.info("Invoke template mask with y-offset = $offsetY and x-offset = $offsetX")
                 val resultImage = mask.mask(image, offsetX.toInt(), offsetY.toInt())
-                val embeddableImage = uploadImage(resultImage)
+                val embeddableImage = uploadImage(resultImage, "masked")
                 response.respond {
                     embed {
                         title = "Template mask"
@@ -237,7 +266,7 @@ suspend fun main() {
                         return@on
                     }
                 val checkResult = paletteChecker.check(image)
-                val embeddableImage = uploadImage(checkResult.second)
+                val embeddableImage = uploadImage(checkResult.second, "check-result")
                 if (checkResult.first.isEmpty()) {
                     response.respond {
                         embed {
@@ -269,6 +298,65 @@ suspend fun main() {
                     }
                 } catch (e: Exception) {
                     logger.exception(e)
+                }
+            }
+            "style" -> {
+                val response = interaction.deferPublicResponse()
+                val attachment = command.attachments["image"]!!
+                if (!attachment.isImage) {
+                    logger.info("Image provided was not an image")
+                    response.respond {
+                        embed {
+                            description = "Attachment included is not an image"
+                            color = Color(255, 0, 0)
+                        }
+                    }
+                    return@on
+                }
+                val imageUrl = URI(attachment.url).toURL()
+                val image =
+                    try {
+                        readImageUrl(imageUrl)
+                    } catch (e: NullPointerException) {
+                        logger.warning("Failed to load image")
+                        response.respond {
+                            embed {
+                                description = "Failed to load image"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                val templateStyle = TemplateStyle(File(command.strings["style"]!!))
+                val resultImage =
+                    try {
+                        logger.info("Processing image")
+                        templateStyle.stylize(image)
+                    } catch (e: ImageTooBigException) {
+                        logger.warning("Attempted to process massive image")
+                        response.respond {
+                            embed {
+                                description =
+                                    "The specified image is too large for the style, the stylized image can be at most **2147483647 pixels**"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                val embeddableImage = uploadImage(resultImage, "stylized")
+                response.respond {
+                    embed {
+                        title = "Stylized template"
+                        this.image = embeddableImage
+                        color = Color(0, 127, 255)
+                    }
+                    actionRow {
+                        this.linkButton(
+                            embeddableImage,
+                        ) {
+                            this.label = "Image link"
+                        }
+                    }
                 }
             }
         }

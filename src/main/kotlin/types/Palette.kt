@@ -41,4 +41,8 @@ class Palette(
     }
 
     fun contains(color: RGBColor): Boolean = palette.contains(color)
+
+    fun indexOf(color: RGBColor?) = palette.indexOf(color)
+
+    operator fun get(index: Int): RGBColor = palette[index]
 }

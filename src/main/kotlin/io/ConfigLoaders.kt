@@ -64,3 +64,18 @@ fun readEmotes(): JsonObject {
     }
     return Json.decodeFromString<JsonObject>(emoteConfigFile.readText())
 }
+
+fun readStyles(): Map<String, String> {
+    logger.info("Read style config")
+    val styleConfigFile = File("./config/styles.json")
+    if (!styleConfigFile.exists()) {
+        logger.error("Style config does not exist")
+        exitProcess(1)
+    }
+    return try {
+        Json.decodeFromString<Map<String, String>>(styleConfigFile.readText())
+    } catch (e: SerializationException) {
+        logger.error("Malformed style config file")
+        exitProcess(1)
+    }
+}

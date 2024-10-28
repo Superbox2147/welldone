@@ -8,7 +8,7 @@ import javax.imageio.ImageIO
 import kotlin.jvm.Throws
 
 @Throws(NullPointerException::class)
-fun readImageFile(file: File) = ImmutableImage.fromAwt(ImageIO.read(file)).toNewBufferedImage(BufferedImage.TYPE_INT_ARGB)!!
+fun readImageFile(file: File) = ImmutableImage.loader().fromFile(file).toNewBufferedImage(BufferedImage.TYPE_INT_ARGB)!!
 
 @Throws(NullPointerException::class)
 fun readImageUrl(url: URL) = ImmutableImage.fromAwt(ImageIO.read(url)).toNewBufferedImage(BufferedImage.TYPE_INT_ARGB)!!
