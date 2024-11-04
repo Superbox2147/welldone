@@ -26,7 +26,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.*
 import org.whatever.exceptions.ImageTooBigException
+import org.whatever.exceptions.LinkParameterMissingException
 import org.whatever.exceptions.TokenNotSetException
+import org.whatever.images.Detemplatizer
 import org.whatever.images.PaletteChecker
 import org.whatever.images.TemplateMask
 import org.whatever.images.TemplateStyle
@@ -35,6 +37,7 @@ import org.whatever.logger.Logger
 import org.whatever.types.Palette
 import java.io.File
 import java.net.URI
+import javax.naming.MalformedLinkException
 import kotlin.system.exitProcess
 
 val logger =
@@ -133,13 +136,6 @@ suspend fun main() {
         "style",
         "Convert a template to a specified source style",
     ) {
-        attachment(
-            "image",
-            "Image to stylize",
-        ) {
-            required = true
-        }
-
         string(
             "style",
             "Pxls template style to use for the template",
@@ -151,6 +147,32 @@ suspend fun main() {
                     style.value,
                 )
             }
+        }
+
+        attachment(
+            "image",
+            "Image to stylize",
+        ) {
+            required = false
+        }
+
+        string(
+            "link",
+            "Stylize a template, image attachment overrides",
+        ) {
+            required = false
+        }
+    }
+
+    kord.createGlobalChatInputCommand(
+        "detemp",
+        "Detemplatize a template from a link",
+    ) {
+        string(
+            "template",
+            "Template link to detemplatize",
+        ) {
+            required = true
         }
     }
 
@@ -302,26 +324,94 @@ suspend fun main() {
             }
             "style" -> {
                 val response = interaction.deferPublicResponse()
-                val attachment = command.attachments["image"]!!
-                if (!attachment.isImage) {
-                    logger.info("Image provided was not an image")
+                val attachment = command.attachments["image"]
+                if (attachment != null) {
+                    if (!attachment.isImage) {
+                        logger.info("Image provided was not an image")
+                        response.respond {
+                            embed {
+                                description = "Attachment included is not an image"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                    val imageUrl = URI(attachment.url).toURL()
+                    val image =
+                        try {
+                            readImageUrl(imageUrl)
+                        } catch (e: NullPointerException) {
+                            logger.warning("Failed to load image")
+                            response.respond {
+                                embed {
+                                    description = "Failed to load image"
+                                    color = Color(255, 0, 0)
+                                }
+                            }
+                            return@on
+                        }
+                    val templateStyle = TemplateStyle(File(command.strings["style"]!!))
+                    val resultImage =
+                        try {
+                            logger.info("Processing image")
+                            templateStyle.stylize(image)
+                        } catch (e: ImageTooBigException) {
+                            logger.warning("Attempted to process massive image")
+                            response.respond {
+                                embed {
+                                    description =
+                                        "The specified image is too large for the style, the stylized image can be at most **2147483647 pixels**"
+                                    color = Color(255, 0, 0)
+                                }
+                            }
+                            return@on
+                        }
+                    val embeddableImage = uploadImage(resultImage, "stylized")
                     response.respond {
                         embed {
-                            description = "Attachment included is not an image"
+                            title = "Stylized template"
+                            this.image = embeddableImage
+                            color = Color(0, 127, 255)
+                        }
+                        actionRow {
+                            this.linkButton(
+                                embeddableImage,
+                            ) {
+                                this.label = "Image link"
+                            }
+                        }
+                    }
+                    return@on
+                }
+                val link = command.strings["link"]
+                if (link == null) {
+                    logger.warning("No link or image was provided")
+                    response.respond {
+                        embed {
+                            description = "You must specify an image or link"
                             color = Color(255, 0, 0)
                         }
                     }
                     return@on
                 }
-                val imageUrl = URI(attachment.url).toURL()
                 val image =
                     try {
-                        readImageUrl(imageUrl)
-                    } catch (e: NullPointerException) {
-                        logger.warning("Failed to load image")
+                        val detemplatizer = Detemplatizer.getDetemplatizer(link)
+                        detemplatizer.detemplatize(link)
+                    } catch (e: LinkParameterMissingException) {
+                        logger.warning("Encountered malformed link (missing params branch)")
                         response.respond {
                             embed {
-                                description = "Failed to load image"
+                                description = "Link is missing parameters"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    } catch (e: MalformedLinkException) {
+                        logger.warning("Encountered malformed link (malformed branch)")
+                        response.respond {
+                            embed {
+                                description = "Link is malformed"
                                 color = Color(255, 0, 0)
                             }
                         }
@@ -347,6 +437,60 @@ suspend fun main() {
                 response.respond {
                     embed {
                         title = "Stylized template"
+                        this.image = embeddableImage
+                        color = Color(0, 127, 255)
+                    }
+                    actionRow {
+                        this.linkButton(
+                            embeddableImage,
+                        ) {
+                            this.label = "Image link"
+                        }
+                    }
+                }
+            }
+            "detemp" -> {
+                val response = interaction.deferPublicResponse()
+                val template =
+                    try {
+                        command.strings["template"]!!
+                    } catch (e: NullPointerException) {
+                        logger.error("Unknown error")
+                        response.respond {
+                            embed {
+                                description = "Unknown error"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                val resultImage =
+                    try {
+                        val detemplatizer = Detemplatizer.getDetemplatizer(template)
+                        detemplatizer.detemplatize(template)
+                    } catch (e: LinkParameterMissingException) {
+                        logger.warning("Encountered malformed link (missing params branch)")
+                        response.respond {
+                            embed {
+                                description = "Link is missing parameters"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    } catch (e: MalformedLinkException) {
+                        logger.warning("Encountered malformed link (malformed branch)")
+                        response.respond {
+                            embed {
+                                description = "Link is malformed"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                val embeddableImage = uploadImage(resultImage, "detemplatized")
+                response.respond {
+                    embed {
+                        title = "Detemplatize"
                         this.image = embeddableImage
                         color = Color(0, 127, 255)
                     }
