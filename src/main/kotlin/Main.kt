@@ -5,7 +5,6 @@ package org.whatever
 import dev.kord.common.Color
 import dev.kord.common.entity.PresenceStatus
 import dev.kord.common.entity.Snowflake
-import dev.kord.core.Kord
 import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.behavior.reply
 import dev.kord.core.cache.data.EmojiData
@@ -22,12 +21,10 @@ import dev.kord.rest.builder.interaction.string
 import dev.kord.rest.builder.message.actionRow
 import dev.kord.rest.builder.message.embed
 import io.github.cdimascio.dotenv.dotenv
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.*
 import org.whatever.exceptions.ImageTooBigException
 import org.whatever.exceptions.LinkParameterMissingException
-import org.whatever.exceptions.TokenNotSetException
 import org.whatever.images.Detemplatizer
 import org.whatever.images.PaletteChecker
 import org.whatever.images.TemplateMask
@@ -67,6 +64,9 @@ val templateStyles = readStyles()
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
     logger.info("start main")
+
+    clearCommands()
+
     kord.createGlobalChatInputCommand(
         "mask",
         "Use an image as a mask to shape another",
@@ -557,17 +557,6 @@ suspend fun main() {
         }
     }
 }
-
-fun generateKord() =
-    runBlocking {
-        logger.info("Getting Kord")
-        val token = dotenv["TOKEN"] ?: ""
-        if (token == "") {
-            logger.error("Token is not set")
-            throw TokenNotSetException()
-        }
-        return@runBlocking Kord(token)
-    }
 
 fun getCommandFullName(command: InteractionCommand): String {
     if (command.data.options.value
