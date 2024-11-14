@@ -14,7 +14,6 @@ import javax.imageio.ImageIO
 import javax.naming.MalformedLinkException
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.math.abs
 import kotlin.system.exitProcess
 
 class Detemplatizer(
@@ -41,7 +40,7 @@ class Detemplatizer(
         logger.info("Get image width")
         val params = pxlsUrl.getPxlsStyleParams()
         val imageWidth =
-            abs((params["tw"] ?: throw LinkParameterMissingException()).toIntOrNull() ?: throw MalformedLinkException())
+            (params["tw"] ?: throw LinkParameterMissingException()).toIntOrNull() ?: throw MalformedLinkException()
         return when (dataType) {
             DataType.Base64 -> {
                 logger.info("Get template data (base64)")
@@ -86,6 +85,9 @@ class Detemplatizer(
                     .fromAwt(ImageIO.read(ByteArrayInputStream(imageBytes)))
                     .toNewBufferedImage(BufferedImage.TYPE_INT_ARGB)!!
             logger.info("Image params: ${image.width}, ${image.height}")
+            if (imageWidth <= -1) {
+                return image
+            }
             return detemplatizeImage(image, imageWidth)
         } catch (e: Exception) {
             logger.exception(e)
@@ -99,6 +101,9 @@ class Detemplatizer(
     ): BufferedImage {
         logger.info(url)
         val image = readImageUrl(URI(url).toURL())
+        if (imageWidth <= -1) {
+            return image
+        }
         return detemplatizeImage(image, imageWidth)
     }
 
