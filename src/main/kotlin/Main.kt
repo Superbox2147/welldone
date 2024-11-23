@@ -25,10 +25,7 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.json.*
 import org.whatever.exceptions.ImageTooBigException
 import org.whatever.exceptions.LinkParameterMissingException
-import org.whatever.images.Detemplatizer
-import org.whatever.images.PaletteChecker
-import org.whatever.images.TemplateMask
-import org.whatever.images.TemplateStyle
+import org.whatever.images.*
 import org.whatever.io.*
 import org.whatever.logger.Logger
 import org.whatever.types.Palette
@@ -60,6 +57,7 @@ val listenEmotes =
 val palette = Palette(File("assets/palette_c82.json"))
 val paletteChecker = PaletteChecker(palette)
 val templateStyles = readStyles()
+val differenceCounter = Difference()
 
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
@@ -171,6 +169,25 @@ suspend fun main() {
         string(
             "template",
             "Template link to detemplatize",
+        ) {
+            required = true
+        }
+    }
+
+    kord.createGlobalChatInputCommand(
+        "difference",
+        "Calculate the number of different pixels between two images",
+    ) {
+        attachment(
+            "image1",
+            "The first image",
+        ) {
+            required = true
+        }
+
+        attachment(
+            "image2",
+            "The second image",
         ) {
             required = true
         }
@@ -500,6 +517,67 @@ suspend fun main() {
                         ) {
                             this.label = "Image link"
                         }
+                    }
+                }
+            }
+            "difference" -> {
+                val response = interaction.deferPublicResponse()
+                val image1Attachment = command.attachments["image1"]!!
+                val image2Attachment = command.attachments["image2"]!!
+                if (!image1Attachment.isImage) {
+                    logger.info("Image 1 was not an image")
+                    response.respond {
+                        embed {
+                            description = "Attachment included is not an image (image1)"
+                            color = Color(255, 0, 0)
+                        }
+                    }
+                    return@on
+                }
+                if (!image2Attachment.isImage) {
+                    logger.info("Image 2 was not an image")
+                    response.respond {
+                        embed {
+                            description = "Attachment included is not an image (image2)"
+                            color = Color(255, 0, 0)
+                        }
+                    }
+                    return@on
+                }
+                val imageUrl1 = URI(image1Attachment.url).toURL()
+                val image1 =
+                    try {
+                        readImageUrl(imageUrl1)
+                    } catch (e: NullPointerException) {
+                        logger.warning("Failed to load image1")
+                        response.respond {
+                            embed {
+                                description = "Failed to load image1"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                val imageUrl2 = URI(image2Attachment.url).toURL()
+                val image2 =
+                    try {
+                        readImageUrl(imageUrl2)
+                    } catch (e: NullPointerException) {
+                        logger.warning("Failed to load image2")
+                        response.respond {
+                            embed {
+                                description = "Failed to load image2"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                val difference = differenceCounter.checkDifference(image1, image2)
+                response.respond {
+                    embed {
+                        title = "Image difference"
+                        color = Color(0, 127, 255)
+                        description = "The difference between the images is $difference pixels"
                     }
                 }
             }
