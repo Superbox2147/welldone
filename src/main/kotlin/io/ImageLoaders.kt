@@ -16,7 +16,7 @@ fun readImageUrl(url: URL): BufferedImage {
     val connection = url.openConnection()
     connection.setRequestProperty(
         "User-Agent",
-        "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
     )
     val inputStream = connection.getInputStream()
     val image =
