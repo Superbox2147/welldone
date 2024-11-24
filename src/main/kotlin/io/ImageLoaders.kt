@@ -5,7 +5,6 @@ import com.sksamuel.scrimage.color.RGBColor
 import java.awt.image.BufferedImage
 import java.io.File
 import java.net.URL
-import javax.imageio.ImageIO
 import kotlin.jvm.Throws
 
 @Throws(NullPointerException::class)
@@ -13,13 +12,20 @@ fun readImageFile(file: File) = ImmutableImage.loader().fromFile(file).toNewBuff
 
 @Throws(NullPointerException::class)
 fun readImageUrl(url: URL): BufferedImage {
+    // println(url.toString())
     val connection = url.openConnection()
     connection.setRequestProperty(
         "User-Agent",
         "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0",
     )
     val inputStream = connection.getInputStream()
-    val image = ImmutableImage.fromAwt(ImageIO.read(inputStream)).toNewBufferedImage(BufferedImage.TYPE_INT_ARGB)!!.clampTransparency()
+    val image =
+        ImmutableImage
+            .loader()
+            .fromStream(inputStream)
+            .toNewBufferedImage(BufferedImage.TYPE_INT_ARGB)!!
+            .clampTransparency()
+
     inputStream.close()
     return image
 }
