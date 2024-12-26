@@ -16,8 +16,6 @@ import dev.kord.core.on
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.rest.builder.interaction.attachment
-import dev.kord.rest.builder.interaction.integer
-import dev.kord.rest.builder.interaction.string
 import dev.kord.rest.builder.message.actionRow
 import dev.kord.rest.builder.message.embed
 import io.github.cdimascio.dotenv.dotenv
@@ -58,140 +56,15 @@ val palette = Palette(File("assets/palette_c82.json"))
 val paletteChecker = PaletteChecker(palette)
 val templateStyles = readStyles()
 val differenceCounter = Difference()
+val botManagers = loadBotManagers()
 
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
     logger.info("start main")
 
-    clearCommands()
+    // clearCommands()
 
-    kord.createGlobalChatInputCommand(
-        "mask",
-        "Use an image as a mask to shape another",
-    ) {
-        attachment(
-            "image",
-            "Image to be masked",
-        ) {
-            required = true
-        }
-
-        string(
-            "mask",
-            "Use a built-in mask, overrides custom mask parameter if set",
-        ) {
-            required = false
-            for (mask in defaultMasks) {
-                choice(
-                    mask.name,
-                    mask.file,
-                )
-            }
-        }
-
-        attachment(
-            "custom-mask",
-            "Use a custom mask, built-in mask overrides this",
-        ) {
-            required = false
-        }
-
-        integer(
-            "offset-y",
-            "Offset the template mask vertically (default: 0)",
-        ) {
-            required = false
-        }
-
-        integer(
-            "offset-x",
-            "Offset the template mask horizontally (default: 0)",
-        ) {
-            required = false
-        }
-
-        integer(
-            "padding",
-            "Add transparent padding around the template mask (default: 0)",
-        ) {
-            required = false
-        }
-    }
-
-    kord.createGlobalChatInputCommand(
-        "compare-palette",
-        "Compare the colors of an image to the palette",
-    ) {
-        attachment(
-            "image",
-            "Image to compare to the palette",
-        ) {
-            required = true
-        }
-    }
-
-    kord.createGlobalChatInputCommand(
-        "style",
-        "Convert a template to a specified source style",
-    ) {
-        string(
-            "style",
-            "Pxls template style to use for the template",
-        ) {
-            required = true
-            for (style in templateStyles) {
-                choice(
-                    style.key,
-                    style.value,
-                )
-            }
-        }
-
-        attachment(
-            "image",
-            "Image to stylize",
-        ) {
-            required = false
-        }
-
-        string(
-            "link",
-            "Stylize a template, image attachment overrides",
-        ) {
-            required = false
-        }
-    }
-
-    kord.createGlobalChatInputCommand(
-        "detemp",
-        "Detemplatize a template from a link",
-    ) {
-        string(
-            "template",
-            "Template link to detemplatize",
-        ) {
-            required = true
-        }
-    }
-
-    kord.createGlobalChatInputCommand(
-        "difference",
-        "Calculate the number of different pixels between two images",
-    ) {
-        attachment(
-            "image1",
-            "The first image",
-        ) {
-            required = true
-        }
-
-        attachment(
-            "image2",
-            "The second image",
-        ) {
-            required = true
-        }
-    }
+    declareCommands(kord)
 
     kord.on<ChatInputCommandInteractionCreateEvent> {
         val command = interaction.command
@@ -581,6 +454,20 @@ suspend fun main() {
                     }
                 }
             }
+            "reload-commands" -> {
+                val response = interaction.deferEphemeralResponse()
+                if (botManagers.contains(interaction.user.id)) {
+                    response.respond {
+                        embed {
+                            description = "Reloading commands..."
+                            color = Color(0, 127, 255)
+                        }
+                    }
+                    clearCommands()
+                    declareCommands(kord)
+                    return@on
+                }
+            }
         }
     }
 
@@ -592,6 +479,11 @@ suspend fun main() {
             logger.info("Welldone")
             return@on
         }
+        if (message.content.startsWith("!bwaa")) {
+            sendRandomBwaa(message.channel)
+            return@on
+        }
+
         for (item in listenEmotes) {
             val emote = item.jsonObject["emote"]!!
             val response = item.jsonObject["response"]!!
