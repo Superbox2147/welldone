@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 package org.whatever.images
 
 import com.sksamuel.scrimage.ImmutableImage
@@ -64,6 +66,8 @@ class Detemplatizer(
                                 "%3A",
                                 ":",
                             ).replace("%2F", "/")
+                            .replace("%253A", ":")
+                            .replace("%252F", "/")
                     detemplatizeUrl(imageUrl, imageWidth)
                 } catch (e: Exception) {
                     logger.exception(e)
@@ -100,7 +104,14 @@ class Detemplatizer(
         imageWidth: Int,
     ): BufferedImage {
         logger.info(url)
-        val image = readImageUrl(URI(url).toURL())
+        val image =
+            try {
+                readImageUrl(URI(url).toURL())
+            } catch (e: Exception) {
+                logger.exception(e)
+                exitProcess(-1)
+            }
+        logger.info("Got image with width ${image.width}")
         if (imageWidth <= -1) {
             return image
         }
