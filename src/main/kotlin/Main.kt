@@ -15,11 +15,10 @@ import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.on
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
-import dev.kord.rest.builder.interaction.attachment
 import dev.kord.rest.builder.message.actionRow
 import dev.kord.rest.builder.message.embed
 import io.github.cdimascio.dotenv.dotenv
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.json.*
 import org.whatever.exceptions.ImageTooBigException
 import org.whatever.exceptions.LinkParameterMissingException
@@ -31,7 +30,9 @@ import java.io.File
 import java.net.URI
 import javax.naming.MalformedLinkException
 import kotlin.system.exitProcess
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 val logger =
     Logger(
         File("./internal logs"),
