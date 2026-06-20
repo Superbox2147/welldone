@@ -102,6 +102,12 @@ suspend fun declareCommands(kord: Kord) {
         ) {
             required = true
         }
+        string(
+            "palette",
+            "Custom palette (default: pxls), comma separated list of hex strings #xxxxxx(xx)"
+        ) {
+            required = false
+        }
     }
 
     kord.createGlobalChatInputCommand(

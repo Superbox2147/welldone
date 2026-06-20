@@ -2,6 +2,7 @@
 
 package org.whatever
 
+import com.sksamuel.scrimage.color.RGBColor
 import dev.kord.common.Color
 import dev.kord.common.entity.PresenceStatus
 import dev.kord.common.entity.Snowflake
@@ -53,7 +54,7 @@ val listenEmotes =
         logger.error("Listen emote configs not defined")
         exitProcess(1)
     } as JsonArray
-val palette = Palette(File("assets/palette_c82.json"))
+val palette = Palette.loadFrom(File("assets/palette_c82.json"))
 val paletteChecker = PaletteChecker(palette)
 val templateStyles = readStyles()
 val differenceCounter = Difference()
@@ -178,7 +179,49 @@ suspend fun main() {
                         }
                         return@on
                     }
-                val checkResult = paletteChecker.check(image)
+                val localPaletteComparer = if (command.strings["palette"] == null) {
+                    paletteChecker
+                } else {
+                    try {
+                        val palette = Palette(
+                            buildList {
+                                for (colorString in command.strings["palette"]!!.split(",").map { it.trim().removePrefix("#") }) {
+                                    if (colorString.length == 6) {
+                                        add(
+                                            RGBColor(
+                                                colorString.take(2).toInt(radix = 16),
+                                                colorString.drop(2).take(2).toInt(radix = 16),
+                                                colorString.drop(4).take(2).toInt(radix = 16)
+                                            )
+                                        )
+                                    } else if (colorString.length == 8) {
+                                        // We will assume transparency is the *last* value
+                                        add(
+                                            RGBColor(
+                                                colorString.take(2).toInt(radix = 16),
+                                                colorString.drop(2).take(2).toInt(radix = 16),
+                                                colorString.drop(4).take(2).toInt(radix = 16),
+                                                colorString.drop(6).take(2).toInt(radix = 16)
+                                            )
+                                        )
+                                    }
+                                    add(RGBColor(0, 0, 0, 0))
+                                }
+                            }
+                        )
+                        PaletteChecker(palette)
+                    } catch (e: Exception) {
+                        response.respond {
+                            embed {
+                                description = "Failed to parse palette"
+                                color = Color(255, 0, 0)
+                            }
+                        }
+                        return@on
+                    }
+                }
+
+                val checkResult = localPaletteComparer.check(image)
                 val embeddableImage = uploadImage(checkResult.second, "check-result")
                 if (checkResult.first.isEmpty()) {
                     response.respond {
