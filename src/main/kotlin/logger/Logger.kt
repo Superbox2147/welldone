@@ -3,10 +3,12 @@ package org.whatever.logger
 import com.sun.jna.Function.*
 import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinNT
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import java.io.BufferedWriter
 import java.io.File
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class Logger(
     logDirectory: File,
     logFilePath: String,
