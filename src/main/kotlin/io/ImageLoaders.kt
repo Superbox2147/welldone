@@ -2,8 +2,6 @@ package org.whatever.io
 
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.color.RGBColor
-import com.sksamuel.scrimage.nio.AnimatedGifReader
-import com.sksamuel.scrimage.nio.ImageSource
 import dev.matrixlab.webp4j.WebPCodec
 import dev.matrixlab.webp4j.gif.GifToWebPConfig
 import java.awt.image.BufferedImage
