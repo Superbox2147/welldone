@@ -29,8 +29,9 @@ suspend fun uploadGif(
 
     val gifEncoder = AnimatedGifEncoder()
     gifEncoder.start(outputStream)
-    gifEncoder.setBackground(Color(0, 0, 0, 0))
-    gifEncoder.setTransparent(Color(0, 0, 0, 0))
+    //gifEncoder.setBackground(Color(0, 0, 0, 0))
+    gifEncoder.setTransparent(Color(0, 0, 0, 0), true)
+    gifEncoder.setQuality(5)
     gifEncoder.setDelay(500)
     gifEncoder.setRepeat(0)
     gif.forEach { frame ->

@@ -210,7 +210,7 @@ object ApplicationCommands {
                 if (transformedImages.size <= 10) {
                     transformedImages.values.forEachIndexed { index, pixels ->
                         gifDescriptionBuilder.append(
-                            "\nFrame $index: ${
+                            "\nFrame ${index + 1}: ${
                                 if (pixels.isEmpty()) {
                                     "All pixels match"
                                 } else {
