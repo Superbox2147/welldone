@@ -18,9 +18,7 @@ import org.whatever.io.*
 import org.whatever.logger.Logger
 import java.io.File
 import kotlin.system.exitProcess
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 val logger =
     Logger(
         File("./internal logs"),
