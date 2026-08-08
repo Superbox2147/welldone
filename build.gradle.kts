@@ -23,7 +23,6 @@ dependencies {
 //    implementation("net.java.dev.jna:jna:$jnaVersion")
 //    implementation("net.java.dev.jna:jna-platform:$jnaVersion")
 
-    implementation("com.madgag:animated-gif-lib:1.4")
     implementation("dev.matrixlab.webp4j:webp4j-core:2.5.0")
 }
 

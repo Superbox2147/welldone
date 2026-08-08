@@ -23,7 +23,10 @@ suspend fun uploadGif(
             kord,
         )
 
-    val encoderConfig = GifToWebPConfig.createLosslessConfig()
+    val encoderConfig = GifToWebPConfig.createLosslessConfig().apply {
+        isMultiThreaded = true
+        loopCount = 0
+    }
     val frameDelays = IntArray(baseFrames.size) { 500 }
     val frames = FrameNormalizer.normalize(baseFrames)
 

@@ -4,6 +4,8 @@ import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.color.RGBColor
 import com.sksamuel.scrimage.nio.AnimatedGifReader
 import com.sksamuel.scrimage.nio.ImageSource
+import dev.matrixlab.webp4j.WebPCodec
+import dev.matrixlab.webp4j.gif.GifToWebPConfig
 import java.awt.image.BufferedImage
 import java.io.File
 import java.net.URL
@@ -38,9 +40,18 @@ fun readGifUrl(url: URL): List<BufferedImage> {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
     )
     val inputStream = connection.getInputStream()!!
-    val animatedGif = AnimatedGifReader.read(ImageSource.of(inputStream))!!
+
+    val encoderConfig = GifToWebPConfig.createLosslessConfig().apply {
+        isMultiThreaded = true
+        loopCount = 0
+    }
+
+    val animatedGif = WebPCodec.encodeGifToWebP(inputStream.readAllBytes(), encoderConfig)
     inputStream.close()
-    return animatedGif.frames.map { it.toNewBufferedImage(BufferedImage.TYPE_INT_ARGB)!! }
+
+    val result = WebPCodec.decodeAnimatedWebP(animatedGif)
+
+    return result.frames.map { it.image }
 }
 
 private fun BufferedImage.clampTransparency(): BufferedImage {
