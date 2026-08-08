@@ -44,13 +44,13 @@ fun readActivityConfig(): Map<String, Snowflake> {
                 ),
             )
         }
-    } catch (e: NullPointerException) {
+    } catch (_: NullPointerException) {
         logger.error("Value not found in activity channels config")
         exitProcess(1)
-    } catch (e: NumberFormatException) {
+    } catch (_: NumberFormatException) {
         logger.error("Malformed value in activity channel config")
         exitProcess(1)
-    } catch (e: SerializationException) {
+    } catch (_: SerializationException) {
         logger.error("Invalid config file syntax for activity channel config")
         exitProcess(1)
     }
@@ -78,7 +78,7 @@ fun readStyles(): Map<String, String> {
     }
     return try {
         Json.decodeFromString<Map<String, String>>(styleConfigFile.readText())
-    } catch (e: SerializationException) {
+    } catch (_: SerializationException) {
         logger.error("Malformed style config file")
         exitProcess(1)
     }
