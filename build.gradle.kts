@@ -17,8 +17,13 @@ dependencies {
     implementation("com.sksamuel.scrimage:scrimage-core:4.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
-    implementation("net.java.dev.jna:jna:5.19.1")
-    implementation("net.java.dev.jna:jna-platform:5.19.1")
+
+//    val jnaVersion = "5.19.1"
+//
+//    implementation("net.java.dev.jna:jna:$jnaVersion")
+//    implementation("net.java.dev.jna:jna-platform:$jnaVersion")
+
+    implementation("com.madgag:animated-gif-lib:1.4")
 }
 
 tasks.test {

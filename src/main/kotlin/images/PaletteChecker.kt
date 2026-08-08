@@ -44,7 +44,7 @@ class PaletteChecker(
     fun formatIncorrectPixels(wrongPixels: List<Pair<Int, Int>>): String {
         val stringBuilder = StringBuilder("The following pixels do not match:")
         for (pixel in wrongPixels) {
-            stringBuilder.append("(${pixel.first}, ${pixel.second})\n")
+            stringBuilder.append("\n(${pixel.first}, ${pixel.second})")
         }
         return stringBuilder.toString()
     }

@@ -1,8 +1,8 @@
 package org.whatever.logger
 
-import com.sun.jna.Function.*
-import com.sun.jna.platform.win32.WinDef
-import com.sun.jna.platform.win32.WinNT
+//import com.sun.jna.Function.*
+//import com.sun.jna.platform.win32.WinDef
+//import com.sun.jna.platform.win32.WinNT
 import kotlin.time.Clock
 import java.io.BufferedWriter
 import java.io.File
@@ -24,7 +24,7 @@ class Logger(
             logFile.createNewFile()
         }
         logWriter = logFile.bufferedWriter()
-        enableConsoleColors()
+//        enableConsoleColors()
         info("Logger initialized")
     }
 
@@ -56,24 +56,24 @@ class Logger(
         error(error)
     }
 
-    private fun enableConsoleColors() {
-        if (System.getProperty("os.name").lowercase().startsWith("windows")) {
-            info("Enabling color escape codes for console")
-            val stdHandleFunction = getFunction("kernel32", "GetStdHandle")
-            val stdOutputHandle = WinDef.DWORD(-11)
-            val handleOut = stdHandleFunction.invoke(WinNT.HANDLE::class.java, arrayOf(stdOutputHandle)) as WinNT.HANDLE
-
-            val preDwmMode = WinDef.DWORDByReference(WinDef.DWORD(0))
-            val getConsoleModeFunction = getFunction("kernel32", "GetConsoleMode")
-            getConsoleModeFunction.invoke(WinDef.BOOL::class.java, arrayOf(handleOut, preDwmMode))
-
-            val enableVirtualTerminalProcessing = 4
-            val dwmMode = preDwmMode.value
-            dwmMode.setValue((dwmMode.toInt() or enableVirtualTerminalProcessing).toLong())
-            val setConsoleModeFunction = getFunction("kernel32", "SetConsoleMode")
-            setConsoleModeFunction.invoke(WinDef.BOOL::class.java, arrayOf(handleOut, dwmMode))
-        } else {
-            info("Skipping color enable step, system is not Windows")
-        }
-    }
+//    private fun enableConsoleColors() {
+//        if (System.getProperty("os.name").lowercase().startsWith("windows")) {
+//            info("Enabling color escape codes for console")
+//            val stdHandleFunction = getFunction("kernel32", "GetStdHandle")
+//            val stdOutputHandle = WinDef.DWORD(-11)
+//            val handleOut = stdHandleFunction.invoke(WinNT.HANDLE::class.java, arrayOf(stdOutputHandle)) as WinNT.HANDLE
+//
+//            val preDwmMode = WinDef.DWORDByReference(WinDef.DWORD(0))
+//            val getConsoleModeFunction = getFunction("kernel32", "GetConsoleMode")
+//            getConsoleModeFunction.invoke(WinDef.BOOL::class.java, arrayOf(handleOut, preDwmMode))
+//
+//            val enableVirtualTerminalProcessing = 4
+//            val dwmMode = preDwmMode.value
+//            dwmMode.setValue((dwmMode.toInt() or enableVirtualTerminalProcessing).toLong())
+//            val setConsoleModeFunction = getFunction("kernel32", "SetConsoleMode")
+//            setConsoleModeFunction.invoke(WinDef.BOOL::class.java, arrayOf(handleOut, dwmMode))
+//        } else {
+//            info("Skipping color enable step, system is not Windows")
+//        }
+//    }
 }

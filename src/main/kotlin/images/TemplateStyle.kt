@@ -1,9 +1,9 @@
 package org.whatever.images
 
 import com.sksamuel.scrimage.color.RGBColor
+import org.whatever.ApplicationCommands
 import org.whatever.exceptions.ImageTooBigException
 import org.whatever.io.readImageFile
-import org.whatever.palette
 import java.awt.image.BufferedImage
 import java.io.File
 
@@ -32,9 +32,9 @@ class TemplateStyle(
             for (x in 0..<image.width) {
                 val argb = image.getRGB(x, y)
                 val pixelColor = RGBColor.fromARGBInt(argb)
-                val colorIndex = palette.indexOf(pixelColor)
+                val colorIndex = ApplicationCommands.palette.indexOf(pixelColor)
                 if (colorIndex != -1) {
-                    val overlayImage = toColor(this[colorIndex], palette[colorIndex])
+                    val overlayImage = toColor(this[colorIndex], ApplicationCommands.palette[colorIndex])
                     overlayBufferedImage(outputImage, overlayImage, x * styleSectionsDimensions, y * styleSectionsDimensions)
                 }
             }

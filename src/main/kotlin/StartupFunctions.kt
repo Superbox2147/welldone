@@ -10,6 +10,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.whatever.exceptions.TokenNotSetException
+import org.whatever.io.readMasks
+import org.whatever.io.readStyles
 import java.io.File
 
 fun generateKord() =
@@ -39,6 +41,9 @@ suspend fun clearCommands() {
 }
 
 suspend fun declareCommands(kord: Kord) {
+    val templateStyles = readStyles()
+    val defaultMasks = readMasks()
+
     kord.createGlobalChatInputCommand(
         "mask",
         "Use an image as a mask to shape another",

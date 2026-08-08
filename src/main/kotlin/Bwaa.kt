@@ -2,9 +2,9 @@ package org.whatever
 
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 
-val bwaas = loadBwaas()
+val bwaaEmotes = loadBwaas()
 
 suspend fun sendRandomBwaa(channel: MessageChannelBehavior) {
     logger.info("Bwaa")
-    channel.createMessage(bwaas.random())
+    channel.createMessage(bwaaEmotes.random())
 }

@@ -65,6 +65,10 @@ fun readEmotes(): JsonObject {
     return Json.decodeFromString<JsonObject>(emoteConfigFile.readText())
 }
 
+fun readWelldoneEmotes(emotes: JsonObject): JsonArray? = emotes["welldone"]?.jsonArray
+
+fun readOtherEmotes(emotes: JsonObject): JsonArray? = emotes["listen_emotes"]?.jsonArray
+
 fun readStyles(): Map<String, String> {
     logger.info("Read style config")
     val styleConfigFile = File("./config/styles.json")

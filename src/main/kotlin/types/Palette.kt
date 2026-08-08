@@ -35,10 +35,10 @@ class Palette(
                         }
                         add(RGBColor(0, 0, 0, 0))
                     })
-            } catch (e: FileNotFoundException) {
+            } catch (_: FileNotFoundException) {
                 logger.error("Palette file does not exist")
                 exitProcess(1)
-            } catch (e: SerializationException) {
+            } catch (_: SerializationException) {
                 logger.error("Palette file is malformed")
                 exitProcess(1)
             }
