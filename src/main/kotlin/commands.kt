@@ -17,8 +17,10 @@ import org.whatever.images.TemplateStyle
 import org.whatever.io.readGifUrl
 import org.whatever.io.readImageFile
 import org.whatever.io.readImageUrl
+import org.whatever.io.readWebPUrl
 import org.whatever.io.uploadGif
 import org.whatever.io.uploadImage
+import org.whatever.types.ImageType
 import org.whatever.types.Palette
 import java.awt.image.BufferedImage
 import java.io.File
@@ -114,21 +116,26 @@ object ApplicationCommands {
             return
         }
 
-        var isGif = false
-        if (attachment.contentType == "image/gif") {
-            logger.info("Got GIF in palette comparison")
-            isGif = true
-        }
+        val imageType =
+            if (attachment.contentType == "image/gif") {
+                logger.info("Got GIF in palette comparison")
+                ImageType.Gif
+            } else if (attachment.contentType == "image/webp") {
+                ImageType.WebP
+            } else {
+                ImageType.Image
+            }
 
         val imageUrl = URI(attachment.url).toURL()
 
         val images = try {
-            if (isGif) {
-                readGifUrl(imageUrl)
-            } else {
-                listOf(
-                    readImageUrl(imageUrl)
-                )
+            when (imageType) {
+                ImageType.Image ->
+                    listOf(
+                        readImageUrl(imageUrl)
+                    )
+                ImageType.Gif -> readGifUrl(imageUrl)
+                ImageType.WebP -> readWebPUrl(imageUrl)
             }
         } catch (_: NullPointerException) {
             RespondUtilities.respondError(
@@ -198,7 +205,7 @@ object ApplicationCommands {
             uploadGif(transformedImages.keys.toList(), "check-result")
         }
 
-        if (isGif) {
+        if (imageType != ImageType.Image) {
             // We're working with a GIF, generate a GIF embed
             val gifDescriptionBuilder = StringBuilder()
 

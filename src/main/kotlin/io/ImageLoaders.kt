@@ -52,6 +52,19 @@ fun readGifUrl(url: URL): List<BufferedImage> {
     return result.frames.map { it.image }
 }
 
+fun readWebPUrl(url: URL): List<BufferedImage> {
+    val connection = url.openConnection()!!
+    connection.setRequestProperty(
+        "User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+    )
+    val inputStream = connection.getInputStream()!!
+    val webPBytes = inputStream.readAllBytes()
+    inputStream.close()
+
+    return WebPCodec.decodeAnimatedWebP(webPBytes).frames.map { it.image }
+}
+
 private fun BufferedImage.clampTransparency(): BufferedImage {
     for (y in 0..<this.height) {
         for (x in 0..<this.width) {
