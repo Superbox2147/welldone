@@ -15,13 +15,10 @@ import org.whatever.images.PaletteChecker
 import org.whatever.images.TemplateMask
 import org.whatever.images.TemplateStyle
 import org.whatever.io.loadAny
-import org.whatever.io.readGifUrl
 import org.whatever.io.readImageFile
 import org.whatever.io.readImageUrl
-import org.whatever.io.readWebPUrl
 import org.whatever.io.uploadGif
 import org.whatever.io.uploadImage
-import org.whatever.types.ImageType
 import org.whatever.types.Palette
 import java.awt.image.BufferedImage
 import java.io.File
