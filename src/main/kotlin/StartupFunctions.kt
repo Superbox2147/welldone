@@ -103,7 +103,7 @@ suspend fun declareCommands(kord: Kord) {
     ) {
         attachment(
             "image",
-            "Image to compare to the palette",
+            "Image or animation to compare to the palette",
         ) {
             required = true
         }
@@ -165,16 +165,16 @@ suspend fun declareCommands(kord: Kord) {
     ) {
         attachment(
             "image1",
-            "The first image",
+            "The first image or an animated GIF or WebP",
         ) {
             required = true
         }
 
         attachment(
             "image2",
-            "The second image",
+            "The second image (required if image1 is not animated)",
         ) {
-            required = true
+            required = false
         }
     }
 

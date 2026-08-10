@@ -4,6 +4,7 @@ import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.color.RGBColor
 import dev.matrixlab.webp4j.WebPCodec
 import dev.matrixlab.webp4j.gif.GifToWebPConfig
+import org.whatever.types.ImageType
 import java.awt.image.BufferedImage
 import java.io.File
 import java.net.URL
@@ -63,6 +64,22 @@ fun readWebPUrl(url: URL): List<BufferedImage> {
     inputStream.close()
 
     return WebPCodec.decodeAnimatedWebP(webPBytes).frames.map { it.image }
+}
+
+fun loadAny(url: URL, mediaType: String): List<BufferedImage> {
+    return when (decodeMediaType(mediaType)) {
+        ImageType.Image -> listOf(readImageUrl(url))
+        ImageType.Gif -> readGifUrl(url)
+        ImageType.WebP -> readWebPUrl(url)
+    }
+}
+
+private fun decodeMediaType(mediaType: String): ImageType {
+    return when (mediaType) {
+        "image/gif" -> ImageType.Gif
+        "image/webp" -> ImageType.WebP
+        else -> ImageType.Image
+    }
 }
 
 private fun BufferedImage.clampTransparency(): BufferedImage {

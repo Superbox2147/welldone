@@ -14,6 +14,7 @@ import org.whatever.images.Difference
 import org.whatever.images.PaletteChecker
 import org.whatever.images.TemplateMask
 import org.whatever.images.TemplateStyle
+import org.whatever.io.loadAny
 import org.whatever.io.readGifUrl
 import org.whatever.io.readImageFile
 import org.whatever.io.readImageUrl
@@ -116,27 +117,10 @@ object ApplicationCommands {
             return
         }
 
-        val imageType =
-            if (attachment.contentType == "image/gif") {
-                logger.info("Got GIF in palette comparison")
-                ImageType.Gif
-            } else if (attachment.contentType == "image/webp") {
-                ImageType.WebP
-            } else {
-                ImageType.Image
-            }
-
         val imageUrl = URI(attachment.url).toURL()
 
         val images = try {
-            when (imageType) {
-                ImageType.Image ->
-                    listOf(
-                        readImageUrl(imageUrl)
-                    )
-                ImageType.Gif -> readGifUrl(imageUrl)
-                ImageType.WebP -> readWebPUrl(imageUrl)
-            }
+            loadAny(imageUrl, attachment.contentType!!)
         } catch (_: NullPointerException) {
             RespondUtilities.respondError(
                 logger,
@@ -148,7 +132,6 @@ object ApplicationCommands {
         }
 
         val transformedImages = mutableMapOf<BufferedImage, List<Pair<Int, Int>>>()
-
 
         val localPaletteComparer = if (command.strings["palette"] == null) {
             paletteChecker
@@ -205,8 +188,8 @@ object ApplicationCommands {
             uploadGif(transformedImages.keys.toList(), "check-result")
         }
 
-        if (imageType != ImageType.Image) {
-            // We're working with a GIF, generate a GIF embed
+        if (transformedImages.size > 1) {
+            // We're working with an animation, generate animation embed
             val gifDescriptionBuilder = StringBuilder()
 
             val totalIncorrectPixels = transformedImages.values.sumOf { it.size }
@@ -372,62 +355,63 @@ object ApplicationCommands {
         }
     }
 
-    suspend fun difference(interaction: ChatInputCommandInteraction, command: InteractionCommand) { // TODO: refactor this to support GIFs
+    suspend fun difference(interaction: ChatInputCommandInteraction, command: InteractionCommand) {
         val response = interaction.deferPublicResponse()
-        val image1Attachment = command.attachments["image1"]!!
-        val image2Attachment = command.attachments["image2"]!!
-        if (!image1Attachment.isImage) {
-            logger.info("Image 1 was not an image")
-            response.respond {
-                embed {
-                    description = "Attachment included is not an image (image1)"
-                    color = Color(255, 0, 0)
-                }
+
+        val imageAttachments = listOf(
+            command.attachments["image1"]!!,
+            command.attachments["image2"]
+        )
+
+        val images = try {
+            if (imageAttachments[1] == null) {
+                loadAny(URI(imageAttachments[0]!!.url).toURL(), imageAttachments[0]!!.contentType!!)
+            } else {
+                loadAny(URI(imageAttachments[0]!!.url).toURL(), imageAttachments[0]!!.contentType!!) +
+                loadAny(URI(imageAttachments[1]!!.url).toURL(), imageAttachments[1]!!.contentType!!)
             }
+        } catch (_: NullPointerException) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "Failed to load image",
+                "Failed to load image"
+            )
             return
         }
-        if (!image2Attachment.isImage) {
-            logger.info("Image 2 was not an image")
-            response.respond {
-                embed {
-                    description = "Attachment included is not an image (image2)"
-                    color = Color(255, 0, 0)
-                }
-            }
-            return
+
+        if (images.size < 2) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "Not enough frames provided",
+                "You must provide 2 images or an animated GIF or WebP"
+            )
         }
-        val imageUrl1 = URI(image1Attachment.url).toURL()
-        val image1 =
-            try {
-                readImageUrl(imageUrl1)
-            } catch (_: NullPointerException) {
-                RespondUtilities.respondError(
-                    logger,
-                    response,
-                    "Failed to load image1",
-                    "Failed to load image1"
-                )
-                return
+
+        val baseImages = images.dropLast(1)
+        val changedImages = images.drop(1)
+
+        val differences = baseImages.mapIndexed { index, image ->
+            differenceCounter.checkDifference(image, changedImages[index])
+        }
+
+        val descriptionBuilder = StringBuilder()
+
+        if (differences.size == 1) {
+            descriptionBuilder.append("The difference between the images is ${differences.first()} pixels")
+        } else {
+            descriptionBuilder.append("The differences for each frame are:")
+            differences.forEachIndexed { index, difference ->
+                descriptionBuilder.append("\n${index + 1} -> ${index + 2}: $difference")
             }
-        val imageUrl2 = URI(image2Attachment.url).toURL()
-        val image2 =
-            try {
-                readImageUrl(imageUrl2)
-            } catch (_: NullPointerException) {
-                RespondUtilities.respondError(
-                    logger,
-                    response,
-                    "Failed to load image2",
-                    "Failed to load image2"
-                )
-                return
-            }
-        val difference = differenceCounter.checkDifference(image1, image2)
+        }
+
         response.respond {
             embed {
-                title = "Image difference"
+                title = "Frame difference"
                 color = Color(0, 127, 255)
-                description = "The difference between the images is $difference pixels"
+                description = descriptionBuilder.toString()
             }
         }
     }
