@@ -402,6 +402,8 @@ object ApplicationCommands {
             differences.forEachIndexed { index, difference ->
                 descriptionBuilder.append("\n${index + 1} -> ${index + 2}: $difference")
             }
+
+            descriptionBuilder.append("\n${differences.size + 1} -> 1: ${differenceCounter.checkDifference(changedImages.last(), baseImages.first())}")
         }
 
         response.respond {
