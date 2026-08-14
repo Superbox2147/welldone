@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:no-wildcard-imports")
-
 package org.whatever.images
 
 import com.sksamuel.scrimage.ImmutableImage
@@ -12,10 +10,10 @@ import org.whatever.logger
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.net.URI
+import java.net.URLDecoder
 import javax.imageio.ImageIO
 import javax.naming.MalformedLinkException
 import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.system.exitProcess
 
 class Detemplatizer(
@@ -47,12 +45,16 @@ class Detemplatizer(
             DataType.Base64 -> {
                 logger.info("Get template data (base64)")
                 val imageData =
-                    parseCharacterCodes(
-                        (params["template"] ?: throw LinkParameterMissingException())
+                    URLDecoder.decode(
+                        URLDecoder.decode(
+                            params["template"] ?: throw LinkParameterMissingException(),
+                            charset("UTF-8")
+                        )
                             .split(
-                                "Bbase64%2C",
+                                "Bbase64,",
                             ).drop(1)
-                            .joinToString("Bbase64%2C"),
+                            .joinToString("Bbase64,"),
+                        charset("UTF-8")
                     )
                 detemplatizeBase64(imageData, imageWidth)
             }
@@ -61,13 +63,10 @@ class Detemplatizer(
                 logger.info("Get template data (link)")
                 try {
                     val imageUrl =
-                        (params["template"] ?: throw LinkParameterMissingException())
-                            .replace(
-                                "%3A",
-                                ":",
-                            ).replace("%2F", "/")
-                            .replace("%253A", ":")
-                            .replace("%252F", "/")
+                        URLDecoder.decode(
+                            params["template"] ?: throw LinkParameterMissingException(),
+                            charset("UTF-8")
+                        )
                     detemplatizeUrl(imageUrl, imageWidth)
                 } catch (e: Exception) {
                     logger.exception(e)
@@ -77,7 +76,6 @@ class Detemplatizer(
         }
     }
 
-    @OptIn(ExperimentalEncodingApi::class)
     private fun detemplatizeBase64(
         imageData: String,
         imageWidth: Int,
@@ -144,24 +142,4 @@ class Detemplatizer(
         }
         return outputImage
     }
-
-    private fun parseCharacterCodes(string: String): String =
-        string
-            .replace("%20", " ")
-            .replace("%21", "!")
-            .replace("%22", "\"")
-            .replace("%23", "#")
-            .replace("%24", "$")
-            .replace("%25", "%")
-            .replace("%26", "&")
-            .replace("%27", "'")
-            .replace("%28", "(")
-            .replace("%29", ")")
-            .replace("%2A", "*")
-            .replace("%2B", "+")
-            .replace("%2C", ",")
-            .replace("%2D", "-")
-            .replace("%2E", ".")
-            .replace("%2F", "/")
-            .replace("%3D", "=")
 }
