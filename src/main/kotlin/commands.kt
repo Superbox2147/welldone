@@ -26,8 +26,6 @@ import java.net.URI
 
 object ApplicationCommands {
     val palette = Palette.loadFrom(File("assets/palette_c82.json"))
-
-    private val differenceCounter = Difference()
     private val botManagers = loadBotManagers()
     private val paletteChecker = PaletteChecker(palette)
 
@@ -386,11 +384,20 @@ object ApplicationCommands {
             )
         }
 
+        if (!Difference.ensureCorrectFrameSizes(images)) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "Frame sizes differ",
+                "All frames must have the same size"
+            )
+        }
+
         val baseImages = images.dropLast(1)
         val changedImages = images.drop(1)
 
         val differences = baseImages.mapIndexed { index, image ->
-            differenceCounter.checkDifference(image, changedImages[index])
+            Difference.checkDifference(image, changedImages[index])
         }
 
         val descriptionBuilder = StringBuilder()
@@ -403,7 +410,7 @@ object ApplicationCommands {
                 descriptionBuilder.append("\n${index + 1} -> ${index + 2}: $difference")
             }
 
-            descriptionBuilder.append("\n${differences.size + 1} -> 1: ${differenceCounter.checkDifference(changedImages.last(), baseImages.first())}")
+            descriptionBuilder.append("\n${differences.size + 1} -> 1: ${Difference.checkDifference(changedImages.last(), baseImages.first())}")
         }
 
         response.respond {
