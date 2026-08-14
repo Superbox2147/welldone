@@ -16,7 +16,7 @@ class TemplateMask(
     ): Boolean =
         try {
             RGBColor.fromARGBInt(mask.getRGB(x % (mask.width + padding), y % (mask.height + padding))).alpha != 0
-        } catch (e: ArrayIndexOutOfBoundsException) {
+        } catch (_: ArrayIndexOutOfBoundsException) {
             false
         }
 
@@ -25,7 +25,6 @@ class TemplateMask(
         xOffset: Int,
         yOffset: Int,
     ): BufferedImage {
-        // logger.info("Template mask started")
         try {
             for (x in 0..<image.width) {
                 for (y in 0..<image.height) {
@@ -40,9 +39,4 @@ class TemplateMask(
         }
         return image
     }
-
-    private fun padding(
-        n: Int,
-        dimension: Int,
-    ): Int = ((n - n % dimension) / dimension) * padding
 }
