@@ -26,21 +26,21 @@ val logger =
     )
 val dotenv = dotenv()
 val kord = Startup.generateKord()
-val activityConfiguration = readActivityConfig()
+val activityConfiguration = ConfigLoaders.readActivityConfig()
 
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
     logger.info("start main")
 
-    val emotes = readEmotes()
-    val welldoneEmotes = readWelldoneEmotes(emotes)
+    val emotes = ConfigLoaders.readEmotes()
+    val welldoneEmotes = ConfigLoaders.readWelldoneEmotes(emotes)
 
     if (welldoneEmotes == null) {
         logger.error("Welldone emote configs not defined")
         exitProcess(1)
     }
 
-    val listenEmotes = readOtherEmotes(emotes)
+    val listenEmotes = ConfigLoaders.readOtherEmotes(emotes)
 
     if (listenEmotes == null) {
         logger.error("Listen emote configs not defined")
@@ -76,7 +76,7 @@ suspend fun main() {
             return@on
         }
         if (message.content.startsWith("!bwaa")) {
-            sendRandomBwaa(message.channel)
+            Bwaa.sendRandomBwaa(message.channel)
             return@on
         }
 

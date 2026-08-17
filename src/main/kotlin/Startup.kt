@@ -10,8 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.whatever.exceptions.TokenNotSetException
-import org.whatever.io.readMasks
-import org.whatever.io.readStyles
+import org.whatever.io.ConfigLoaders
 import java.io.File
 
 object Startup {
@@ -42,8 +41,9 @@ object Startup {
     }
 
     suspend fun declareCommands(kord: Kord) {
-        val templateStyles = readStyles()
-        val defaultMasks = readMasks()
+        val templateStyles = ConfigLoaders.readStyles()
+        val defaultMasks = ConfigLoaders.readMasks()
+        val extraPalettes = ConfigLoaders.readPalettes()
 
         kord.createGlobalChatInputCommand(
             "mask",
@@ -108,6 +108,18 @@ object Startup {
             ) {
                 required = true
             }
+
+            string(
+                "preset-palette",
+                "Use a preset palette"
+            ) {
+                required = false
+
+                for ((name, file) in extraPalettes) {
+                    choice(name, file)
+                }
+            }
+
             string(
                 "palette",
                 "Custom palette (default: pxls), comma separated list of hex strings #xxxxxx(xx)"
@@ -125,10 +137,10 @@ object Startup {
                 "Pxls template style to use for the template",
             ) {
                 required = true
-                for (style in templateStyles) {
+                for ((name, value) in templateStyles) {
                     choice(
-                        style.key,
-                        style.value,
+                        name,
+                        value,
                     )
                 }
             }

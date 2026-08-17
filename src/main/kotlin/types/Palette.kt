@@ -24,9 +24,9 @@ class Palette(
             try {
                 val paletteJson = Json.decodeFromString<JsonObject>(file.readText())
                     return Palette(buildList {
-                        for (color in paletteJson) {
+                        for ((_, value) in paletteJson) {
                             val colorString =
-                                color.value.jsonPrimitive.content
+                                value.jsonPrimitive.content
                                     .drop(1)
                             val red = (colorString[0].toString() + colorString[1]).toInt(radix = 16)
                             val green = (colorString[2].toString() + colorString[3]).toInt(radix = 16)

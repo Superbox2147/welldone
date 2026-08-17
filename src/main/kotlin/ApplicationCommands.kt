@@ -25,6 +25,7 @@ import java.io.File
 import java.net.URI
 
 object ApplicationCommands {
+    const val PALETTE_EXTRA_DIR_PATH = "./assets/palettes-extra"
     val palette = Palette.loadFrom(File("assets/palette_c82.json"))
     private val botManagers = Startup.loadBotManagers()
     private val paletteChecker = PaletteChecker(palette)
@@ -128,9 +129,9 @@ object ApplicationCommands {
 
         val transformedImages = mutableMapOf<BufferedImage, List<Pair<Int, Int>>>()
 
-        val localPaletteComparer = if (command.strings["palette"] == null) {
+        val localPaletteComparer = if (command.strings["palette"] == null && command.strings["preset-palette"] == null) {
             paletteChecker
-        } else {
+        } else if (command.strings["palette"] != null) {
             try {
                 val palette = Palette(
                     buildList {
@@ -169,6 +170,21 @@ object ApplicationCommands {
                 )
                 return
             }
+        } else {
+            if (command.strings["preset-palette"] == null) {
+                RespondUtilities.respondError(
+                    logger,
+                    response,
+                    "Preset palette unset",
+                    "Somehow, an invalid state was reached, please report this"
+                )
+                return
+            }
+
+            val presetPaletteChoice = command.strings["preset-palette"]!!
+
+            val palette = Palette.loadFrom(File("$PALETTE_EXTRA_DIR_PATH/$presetPaletteChoice"))
+            PaletteChecker(palette)
         }
 
         images.forEach { image ->
