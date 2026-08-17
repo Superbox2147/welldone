@@ -25,7 +25,7 @@ val logger =
         "${Clock.System.now().epochSeconds}",
     )
 val dotenv = dotenv()
-val kord = generateKord()
+val kord = Startup.generateKord()
 val activityConfiguration = readActivityConfig()
 
 @OptIn(PrivilegedIntent::class)
@@ -47,7 +47,7 @@ suspend fun main() {
         exitProcess(1)
     }
 
-    declareCommands(kord)
+    Startup.declareCommands(kord)
 
     kord.on<ChatInputCommandInteractionCreateEvent> {
         val command = interaction.command

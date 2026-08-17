@@ -26,7 +26,7 @@ import java.net.URI
 
 object ApplicationCommands {
     val palette = Palette.loadFrom(File("assets/palette_c82.json"))
-    private val botManagers = loadBotManagers()
+    private val botManagers = Startup.loadBotManagers()
     private val paletteChecker = PaletteChecker(palette)
 
     suspend fun mask(interaction: ChatInputCommandInteraction, command: InteractionCommand) {
@@ -431,8 +431,8 @@ object ApplicationCommands {
                     color = Color(0, 127, 255)
                 }
             }
-            clearCommands()
-            declareCommands(kord)
+            Startup.clearCommands(kord)
+            Startup.declareCommands(kord)
             return
         }
     }
