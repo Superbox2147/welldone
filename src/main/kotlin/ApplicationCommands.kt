@@ -22,6 +22,7 @@ import org.whatever.io.uploadImage
 import org.whatever.types.Palette
 import java.awt.image.BufferedImage
 import java.io.File
+import java.io.IOException
 import java.net.URI
 
 object ApplicationCommands {
@@ -116,13 +117,23 @@ object ApplicationCommands {
         val imageUrl = URI(attachment.url).toURL()
 
         val images = try {
-            loadAny(imageUrl, attachment.contentType!!)
+            loadAny(imageUrl)
         } catch (_: NullPointerException) {
             RespondUtilities.respondError(
                 logger,
                 response,
                 "Failed to load image",
                 "Failed to load image"
+            )
+            return
+        } catch (e: IOException) {
+            logger.exception(e)
+
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "Image decoding failed",
+                "Image decoding failed"
             )
             return
         }
@@ -376,10 +387,10 @@ object ApplicationCommands {
 
         val images = try {
             if (imageAttachments[1] == null) {
-                loadAny(URI(imageAttachments[0]!!.url).toURL(), imageAttachments[0]!!.contentType!!)
+                loadAny(URI(imageAttachments[0]!!.url).toURL())
             } else {
-                loadAny(URI(imageAttachments[0]!!.url).toURL(), imageAttachments[0]!!.contentType!!) +
-                loadAny(URI(imageAttachments[1]!!.url).toURL(), imageAttachments[1]!!.contentType!!)
+                loadAny(URI(imageAttachments[0]!!.url).toURL()) +
+                loadAny(URI(imageAttachments[1]!!.url).toURL())
             }
         } catch (_: NullPointerException) {
             RespondUtilities.respondError(
