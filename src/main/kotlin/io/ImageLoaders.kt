@@ -19,10 +19,6 @@ fun readImageFile(file: File) = ImmutableImage.loader().fromFile(file).toNewBuff
 @Throws(NullPointerException::class)
 fun readImageUrl(url: URL): BufferedImage = decodeImage(readBytes(url))
 
-fun readGifUrl(url: URL): List<BufferedImage> = decodeGif(readBytes(url))
-
-fun readWebPUrl(url: URL): List<BufferedImage> = decodeWebP(readBytes(url))
-
 fun decodeGif(bytes: ByteArray): List<BufferedImage> {
     val encoderConfig = GifToWebPConfig.createLosslessConfig().apply {
         isMultiThreaded = true
