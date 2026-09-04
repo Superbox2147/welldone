@@ -6,6 +6,7 @@ import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.entity.interaction.ChatInputCommandInteraction
 import dev.kord.core.entity.interaction.InteractionCommand
 import dev.kord.rest.builder.component.actionRow
+import dev.kord.rest.builder.message.AttachmentBuilder
 import dev.kord.rest.builder.message.embed
 import org.whatever.discordutils.RespondUtilities
 import org.whatever.discordutils.SharedCommandParts
@@ -19,6 +20,7 @@ import org.whatever.io.readImageFile
 import org.whatever.io.readImageUrl
 import org.whatever.io.uploadGif
 import org.whatever.io.uploadImage
+import org.whatever.io.uploadText
 import org.whatever.types.Palette
 import java.awt.image.BufferedImage
 import java.io.File
@@ -429,14 +431,14 @@ object ApplicationCommands {
 
         val descriptionBuilder = StringBuilder()
 
+        val finalFrameDifference = Difference.checkDifference(changedImages.last(), baseImages.first())
+
         val differenceDisplay = if (differences.size == 1) {
             descriptionBuilder.append("The difference between the images is ${differences.first().first} pixels")
             descriptionBuilder.append("\nDisplaying overlaid image2 pixels")
 
             uploadImage(differences.first().second, "difference-overlay")
         } else {
-            val finalFrameDifference = Difference.checkDifference(changedImages.last(), baseImages.first())
-
             descriptionBuilder.append("The differences for each frame are:")
             differences.forEachIndexed { index, difference ->
                 descriptionBuilder.append("\n${index + 1} -> ${index + 2}: ${difference.first}")
@@ -446,7 +448,30 @@ object ApplicationCommands {
 
             descriptionBuilder.append("\n\nDisplaying overlaid pixels from proceeding frames")
 
-            uploadGif(differences.map { it.second } + finalFrameDifference.second, "difference-overlay")
+            val upload = uploadGif(differences.map { it.second } + finalFrameDifference.second, "difference-overlay")
+
+            if (differences.size > 20) {
+                response.respond {
+                    embed {
+                        title = "Frame difference"
+                        color = Color(0, 127, 255)
+                        description = "Too many frames, check included text file"
+                        image = upload
+                    }
+
+                    actionRow {
+                        this.linkButton(
+                            uploadText(descriptionBuilder.toString(), "difference-content"),
+                        ) {
+                            this.label = "Difference content"
+                        }
+                    }
+                }
+
+                return
+            }
+
+            upload
         }
 
         response.respond {
