@@ -429,15 +429,24 @@ object ApplicationCommands {
 
         val descriptionBuilder = StringBuilder()
 
-        if (differences.size == 1) {
-            descriptionBuilder.append("The difference between the images is ${differences.first()} pixels")
+        val differenceDisplay = if (differences.size == 1) {
+            descriptionBuilder.append("The difference between the images is ${differences.first().first} pixels")
+            descriptionBuilder.append("\nDisplaying overlaid image2 pixels")
+
+            uploadImage(differences.first().second, "difference-overlay")
         } else {
+            val finalFrameDifference = Difference.checkDifference(changedImages.last(), baseImages.first())
+
             descriptionBuilder.append("The differences for each frame are:")
             differences.forEachIndexed { index, difference ->
-                descriptionBuilder.append("\n${index + 1} -> ${index + 2}: $difference")
+                descriptionBuilder.append("\n${index + 1} -> ${index + 2}: ${difference.first}")
             }
 
-            descriptionBuilder.append("\n${differences.size + 1} -> 1: ${Difference.checkDifference(changedImages.last(), baseImages.first())}")
+            descriptionBuilder.append("\n${differences.size + 1} -> 1: ${finalFrameDifference.first}")
+
+            descriptionBuilder.append("\n\nDisplaying overlaid pixels from proceeding frames")
+
+            uploadGif(differences.map { it.second } + finalFrameDifference.second, "difference-overlay")
         }
 
         response.respond {
@@ -445,6 +454,7 @@ object ApplicationCommands {
                 title = "Frame difference"
                 color = Color(0, 127, 255)
                 description = descriptionBuilder.toString()
+                image = differenceDisplay
             }
         }
     }

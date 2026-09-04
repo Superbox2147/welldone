@@ -6,14 +6,19 @@ object Difference {
     fun checkDifference(
         image1: BufferedImage,
         image2: BufferedImage,
-    ): Long {
+    ): Pair<Long, BufferedImage> {
+        val overlayImage = BufferedImage(image1.width, image1.height, BufferedImage.TYPE_INT_ARGB)
+
         var totalDifference = 0L
         for (y in 0..<image1.height) {
             for (x in 0..<image1.width) {
-                if (image1.getRGB(x, y) != image2.getRGB(x, y)) totalDifference++
+                if (image1.getRGB(x, y) != image2.getRGB(x, y)) {
+                    totalDifference++
+                    overlayImage.setRGB(x, y, image2.getRGB(x, y))
+                }
             }
         }
-        return totalDifference
+        return Pair(totalDifference, overlayImage)
     }
 
     fun ensureCorrectFrameSizes(frames: List<BufferedImage>): Boolean {
