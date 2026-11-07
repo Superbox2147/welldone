@@ -529,6 +529,8 @@ object ApplicationCommands {
             }
         }
 
+        logger.info("Got scale $scale")
+
         val downscaled = try {
             Downscaler.downscale(frames, frames.map { scale })
         } catch (e: IllegalStateException) {
@@ -537,6 +539,14 @@ object ApplicationCommands {
                 response,
                 e.message ?: e.toString(),
                 e.message ?: e.toString()
+            )
+            return
+        } catch (e: Exception) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                e.stackTraceToString(),
+                e.toString()
             )
             return
         }
@@ -551,7 +561,7 @@ object ApplicationCommands {
             } else {
                 descriptionBuilder.append("Animated image downscaled by automatically detected factor")
             }
-            uploadGif(frames, "downscaled")
+            uploadGif(downscaled, "downscaled")
         }
 
         response.respond {

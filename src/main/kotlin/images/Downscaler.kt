@@ -12,11 +12,9 @@ object Downscaler {
                 BufferedImage.TYPE_INT_ARGB
             )
 
-            for (x in 0..<image.width) {
-                for (y in 0..<image.height) {
-                    if (x % scale == 0 && y % scale == 0) {
-                        downscaledImage.setRGB(x / scale, y / scale, image.getRGB(x, y))
-                    }
+            for (x in 0..<downscaledImage.width) {
+                for (y in 0..<downscaledImage.height) {
+                    downscaledImage.setRGB(x, y, image.getRGB(x * scale, y * scale))
                 }
             }
 
