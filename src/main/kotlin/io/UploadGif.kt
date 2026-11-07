@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage
 suspend fun uploadGif(
     baseFrames: List<BufferedImage>,
     name: String,
+    mspf: Int = 500
 ): String {
     logger.info("Upload GIF file")
     val channel =
@@ -27,7 +28,7 @@ suspend fun uploadGif(
         isMultiThreaded = true
         loopCount = 0
     }
-    val frameDelays = IntArray(baseFrames.size) { 500 }
+    val frameDelays = IntArray(baseFrames.size) { mspf }
     val frames = FrameNormalizer.normalize(baseFrames)
 
     val byteArray = WebPCodec.createAnimatedWebP(frames, frameDelays, encoderConfig)

@@ -213,6 +213,13 @@ object Startup {
             ) {
                 required = false
             }
+
+            integer(
+                "mspf",
+                "Milliseconds per frame in the output, only used for animations"
+            ) {
+                required = false
+            }
         }
 
         kord.createGlobalChatInputCommand(
@@ -231,6 +238,13 @@ object Startup {
                 "Scale for upscaling"
             ) {
                 required = true
+            }
+
+            integer(
+                "mspf",
+                "Milliseconds per frame in the output, only used for animations"
+            ) {
+                required = false
             }
         }
     }

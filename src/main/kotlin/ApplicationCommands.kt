@@ -516,6 +516,17 @@ object ApplicationCommands {
             return
         }
         val scale = command.integers["scale"]?.toInt()
+        val mspf = command.integers["mspf"]?.toInt() ?: 500
+
+        if (frames.size > 1 && mspf < 1) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "MSPF was less than 0",
+                "MSPF must be a positive integer greater than 0"
+            )
+            return
+        }
 
         if (scale != null) {
             if (scale < 1) {
@@ -561,7 +572,7 @@ object ApplicationCommands {
             } else {
                 descriptionBuilder.append("Animated image downscaled by automatically detected factor")
             }
-            uploadGif(downscaled, "downscaled")
+            uploadGif(downscaled, "downscaled", mspf)
         }
 
         response.respond {
@@ -590,6 +601,17 @@ object ApplicationCommands {
             return
         }
         val scale = command.integers["scale"]!!.toInt()
+        val mspf = command.integers["mspf"]?.toInt() ?: 500
+
+        if (frames.size > 1 && mspf < 1) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "MSPF was less than 0",
+                "MSPF must be a positive integer greater than 0"
+            )
+            return
+        }
 
         if (scale < 1) {
             RespondUtilities.respondError(
@@ -609,7 +631,7 @@ object ApplicationCommands {
             uploadImage(downscaled[0], "upscaled")
         } else {
             descriptionBuilder.append("Animated image upscaled by factor $scale")
-            uploadGif(frames, "upscaled")
+            uploadGif(frames, "upscaled", mspf)
         }
 
         response.respond {
