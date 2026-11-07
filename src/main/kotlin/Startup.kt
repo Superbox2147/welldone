@@ -195,6 +195,44 @@ object Startup {
             "reload-commands",
             "Reload all the commands, only available for bot managers",
         )
+
+        kord.createGlobalChatInputCommand(
+            "downscale",
+            "Downscale a pixel art image or animation"
+        ) {
+            attachment(
+                "images",
+                "Image, GIF or WebP to get frames from"
+            ) {
+                required = true
+            }
+
+            integer(
+                "scale",
+                "Scale for downscaling (optional)"
+            ) {
+                required = false
+            }
+        }
+
+        kord.createGlobalChatInputCommand(
+            "upscale",
+            "Upscale a pixel art image or animation"
+        ) {
+            attachment(
+                "images",
+                "Image, GIF or WebP to get frames from"
+            ) {
+                required = true
+            }
+
+            integer(
+                "scale",
+                "Scale for upscaling"
+            ) {
+                required = true
+            }
+        }
     }
 
     fun loadBwaas(): List<String> {

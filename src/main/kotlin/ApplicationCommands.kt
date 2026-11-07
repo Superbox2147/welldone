@@ -6,15 +6,16 @@ import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.entity.interaction.ChatInputCommandInteraction
 import dev.kord.core.entity.interaction.InteractionCommand
 import dev.kord.rest.builder.component.actionRow
-import dev.kord.rest.builder.message.AttachmentBuilder
 import dev.kord.rest.builder.message.embed
 import org.whatever.discordutils.RespondUtilities
 import org.whatever.discordutils.SharedCommandParts
 import org.whatever.exceptions.ImageTooBigException
 import org.whatever.images.Difference
+import org.whatever.images.Downscaler
 import org.whatever.images.PaletteChecker
 import org.whatever.images.TemplateMask
 import org.whatever.images.TemplateStyle
+import org.whatever.images.Upscaler
 import org.whatever.io.loadAny
 import org.whatever.io.readImageFile
 import org.whatever.io.readImageUrl
@@ -496,6 +497,118 @@ object ApplicationCommands {
             Startup.clearCommands(kord)
             Startup.declareCommands(kord)
             return
+        }
+    }
+
+    suspend fun downscale(interaction: ChatInputCommandInteraction, command: InteractionCommand) {
+        val response = interaction.deferPublicResponse()
+
+        val images = command.attachments["images"]!!
+        val frames = try {
+            loadAny(URI(images.url).toURL())
+        } catch (_: NullPointerException) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "Failed to load frames",
+                "Failed to load frames"
+            )
+            return
+        }
+        val scale = command.integers["scale"]?.toInt()
+
+        if (scale != null) {
+            if (scale < 1) {
+                RespondUtilities.respondError(
+                    logger,
+                    response,
+                    "Scale is less than 1",
+                    "Scale must be a positive integer greater than 0"
+                )
+                return
+            }
+        }
+
+        val downscaled = try {
+            Downscaler.downscale(frames, frames.map { scale })
+        } catch (e: IllegalStateException) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                e.message ?: e.toString(),
+                e.message ?: e.toString()
+            )
+            return
+        }
+
+        val descriptionBuilder = StringBuilder()
+        val displayableImage = if (downscaled.size == 1) {
+            descriptionBuilder.append("Image downscaled from `${frames[0].width} x ${frames[0].height}` to `${downscaled[0].width} x ${downscaled[0].height}`")
+            uploadImage(downscaled[0], "downscaled")
+        } else {
+            if (scale != null) {
+                descriptionBuilder.append("Animated image downscaled by factor $scale")
+            } else {
+                descriptionBuilder.append("Animated image downscaled by automatically detected factor")
+            }
+            uploadGif(frames, "downscaled")
+        }
+
+        response.respond {
+            embed {
+                title = "Downscale"
+                color = Color(0, 127, 255)
+                description = descriptionBuilder.toString()
+                image = displayableImage
+            }
+        }
+    }
+
+    suspend fun upscale(interaction: ChatInputCommandInteraction, command: InteractionCommand) {
+        val response = interaction.deferPublicResponse()
+
+        val images = command.attachments["images"]!!
+        val frames = try {
+            loadAny(URI(images.url).toURL())
+        } catch (_: NullPointerException) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "Failed to load frames",
+                "Failed to load frames"
+            )
+            return
+        }
+        val scale = command.integers["scale"]!!.toInt()
+
+        if (scale < 1) {
+            RespondUtilities.respondError(
+                logger,
+                response,
+                "Scale is less than 1",
+                "Scale must be a positive integer greater than 0"
+            )
+            return
+        }
+
+        val downscaled = Upscaler.upscale(frames, scale)
+
+        val descriptionBuilder = StringBuilder()
+        val displayableImage = if (downscaled.size == 1) {
+            descriptionBuilder.append("Image upscaled from `${frames[0].width} x ${frames[0].height}` to `${downscaled[0].width} x ${downscaled[0].height}`")
+            uploadImage(downscaled[0], "upscaled")
+        } else {
+            descriptionBuilder.append("Animated image upscaled by factor $scale")
+            uploadGif(frames, "upscaled")
+        }
+
+        response.respond {
+            embed {
+                title = "Upscale"
+                color = Color(0, 127, 255)
+                description = descriptionBuilder.toString()
+                image = displayableImage
+            }
         }
     }
 }

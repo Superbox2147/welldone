@@ -64,6 +64,8 @@ suspend fun main() {
             "detemp" -> ApplicationCommands.detemp(interaction, command)
             "difference" -> ApplicationCommands.difference(interaction, command)
             "reload-commands" -> ApplicationCommands.reloadCommands(interaction)
+            "downscale" -> ApplicationCommands.downscale(interaction, command)
+            "upscale" -> ApplicationCommands.upscale(interaction, command)
         }
     }
 
